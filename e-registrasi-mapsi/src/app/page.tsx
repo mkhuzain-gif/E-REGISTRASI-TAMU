@@ -20,12 +20,6 @@ export default function HomePage() {
   }, [isLoggedIn, router]);
 
   return (
-    <div className="min-h-screen bg-brand-50 flex items-center justify-center">
-      <div className="neo-card p-8 text-center animate-bounce-in">
-        <div className="text-4xl mb-3">🕌</div>
-        <p className="font-bold text-brand-900">MAPSI 2026</p>
-        <p className="text-sm text-brand-700 mt-1">Memuat sistem...</p>
-      </div>
-    </div>
+    <div className="fixed inset-0 bg-gradient-to-br from-[#022c22] via-[#064e3b] to-[#047857]" />
   );
 }

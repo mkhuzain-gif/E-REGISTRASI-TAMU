@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const eventSub  = eventSettings?.location
     ? `${eventSettings.location} ${eventSettings.year ?? 2026}`
     : `Kedungtuban ${eventSettings?.year ?? 2026}`;
-  const logoSrc   = eventSettings?.logoUrl ?? '/kkg-pai-logo.jpg';
+  const logoSrc   = eventSettings?.logoUrl || '/icon-512x512.png';
 
   return (
     <div className="h-screen flex overflow-hidden" style={{ background: '#f0fdf8' }}>
@@ -88,7 +88,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               width={44}
               height={44}
               className="object-contain w-full h-full bg-white p-0.5"
-              onError={(e) => { (e.target as HTMLImageElement).src = '/kkg-pai-logo.jpg'; }}
+              onError={(e) => { (e.target as HTMLImageElement).src = '/icon-512x512.png'; }}
             />
           </div>
           <div className="min-w-0 flex-1">

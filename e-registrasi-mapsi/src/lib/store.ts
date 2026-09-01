@@ -97,9 +97,45 @@ export interface AppState {
   exportData: () => string;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants & Cache ────────────────────────────────────────────────────────
 
-const ADMIN_PIN = '123456';
+export const DEFAULT_EVENT_SETTINGS: EventSettings = {
+  name: 'E-REGISTRASI MAPSI XXVII',
+  description: 'MAPSI Tingkat Kecamatan Kedungtuban XXVII · 2026',
+  location: 'Kecamatan Kedungtuban, Kabupaten Blora',
+  eventDate: '2026-09-01',
+  logoUrl: '/icon-512x512.png',
+  year: 2026,
+};
+
+const SETTINGS_STORAGE_KEY = 'e_registrasi_event_settings_v1';
+
+export function getCachedEventSettings(): EventSettings {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object') {
+          return {
+            ...DEFAULT_EVENT_SETTINGS,
+            ...parsed,
+            logoUrl: parsed.logoUrl || '/icon-512x512.png',
+          };
+        }
+      }
+    } catch {}
+  }
+  return DEFAULT_EVENT_SETTINGS;
+}
+
+export function setCachedEventSettings(settings: EventSettings) {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    } catch {}
+  }
+}
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
@@ -109,7 +145,7 @@ export const useStore = create<AppState>((set, get) => ({
   adminPin: '123456',
 
   // ── Event Settings ────────────────────────────────────────────────────────
-  eventSettings: null,
+  eventSettings: typeof window !== 'undefined' ? getCachedEventSettings() : DEFAULT_EVENT_SETTINGS,
 
   loadEventSettings: async () => {
     const data = await fetchEventSettings();
@@ -117,16 +153,22 @@ export const useStore = create<AppState>((set, get) => ({
       const year = data.event_date
         ? new Date(data.event_date).getFullYear()
         : 2026;
-      set({
-        eventSettings: {
-          name: data.name,
-          description: data.description ?? '',
-          location: data.location ?? '',
-          eventDate: data.event_date,
-          logoUrl: data.logo_url ?? '/kkg-pai-logo.jpg',
-          year,
-        },
-      });
+      const cached = getCachedEventSettings();
+      // Prioritaskan logoUrl dari upload pengaturan / cache jika data di DB masih placeholder '/logo.jpg'
+      const activeLogo = (data.logo_url && data.logo_url !== '/logo.jpg') 
+        ? data.logo_url 
+        : (cached.logoUrl || '/icon-512x512.png');
+
+      const resolved: EventSettings = {
+        name: data.name || cached.name,
+        description: data.description ?? cached.description,
+        location: data.location ?? cached.location,
+        eventDate: data.event_date || cached.eventDate,
+        logoUrl: activeLogo,
+        year,
+      };
+      setCachedEventSettings(resolved);
+      set({ eventSettings: resolved });
     }
   },
 
@@ -140,13 +182,14 @@ export const useStore = create<AppState>((set, get) => ({
       : eventSettings?.year ?? 2026;
 
     const optimistic: import('./store').EventSettings = {
-      name:        input.name        ?? eventSettings?.name        ?? '',
-      description: input.description ?? eventSettings?.description ?? '',
-      location:    input.location    ?? eventSettings?.location    ?? '',
-      eventDate:   input.eventDate   ?? eventSettings?.eventDate   ?? '',
-      logoUrl:     input.logoUrl     ?? eventSettings?.logoUrl     ?? '/kkg-pai-logo.jpg',
+      name:        input.name        ?? eventSettings?.name        ?? DEFAULT_EVENT_SETTINGS.name,
+      description: input.description ?? eventSettings?.description ?? DEFAULT_EVENT_SETTINGS.description,
+      location:    input.location    ?? eventSettings?.location    ?? DEFAULT_EVENT_SETTINGS.location,
+      eventDate:   input.eventDate   ?? eventSettings?.eventDate   ?? DEFAULT_EVENT_SETTINGS.eventDate,
+      logoUrl:     input.logoUrl     ?? eventSettings?.logoUrl     ?? DEFAULT_EVENT_SETTINGS.logoUrl,
       year:        newYear,
     };
+    setCachedEventSettings(optimistic);
     set({ eventSettings: optimistic });
 
     // ── 2. Persist ke Supabase (background) ──────────────────────────────────
@@ -165,25 +208,25 @@ export const useStore = create<AppState>((set, get) => ({
     }
 
     // ── 3. Reload dari Supabase untuk konfirmasi ──────────────────────────────
-    //    Jika Supabase berhasil diupdate → state sinkron dengan DB
-    //    Jika RLS blokir (data lama) → tetap pakai optimistic state
     try {
       const fresh = await fetchEventSettings();
       if (fresh) {
         const freshYear = fresh.event_date
           ? new Date(fresh.event_date).getFullYear()
           : optimistic.year;
+        const activeLogo = (fresh.logo_url && fresh.logo_url !== '/logo.jpg')
+          ? fresh.logo_url
+          : optimistic.logoUrl;
         const freshSettings: import('./store').EventSettings = {
-          name:        fresh.name,
-          description: fresh.description ?? '',
-          location:    fresh.location    ?? '',
-          eventDate:   fresh.event_date,
-          logoUrl:     fresh.logo_url    ?? '/kkg-pai-logo.jpg',
+          name:        fresh.name || optimistic.name,
+          description: fresh.description ?? optimistic.description,
+          location:    fresh.location    ?? optimistic.location,
+          eventDate:   fresh.event_date  || optimistic.eventDate,
+          logoUrl:     activeLogo,
           year:        freshYear,
         };
-        // Hanya pakai data Supabase jika nama sudah sesuai dengan yang kita simpan
-        // (artinya update berhasil). Jika tidak cocok, pertahankan optimistic state.
         if (!input.name || fresh.name === input.name) {
+          setCachedEventSettings(freshSettings);
           set({ eventSettings: freshSettings });
         }
       }
@@ -318,21 +361,25 @@ export const useStore = create<AppState>((set, get) => ({
         fetchAdminPin(),
         fetchEventSettings(),
       ]);
-      let eventSettings = null;
+      let resolvedSettings = getCachedEventSettings();
       if (eventData) {
         const year = eventData.event_date
           ? new Date(eventData.event_date).getFullYear()
-          : 2026;
-        eventSettings = {
-          name: eventData.name,
-          description: eventData.description ?? '',
-          location: eventData.location ?? '',
-          eventDate: eventData.event_date,
-          logoUrl: eventData.logo_url ?? '/kkg-pai-logo.jpg',
+          : (resolvedSettings.year || 2026);
+        const activeLogo = (eventData.logo_url && eventData.logo_url !== '/logo.jpg')
+          ? eventData.logo_url
+          : (resolvedSettings.logoUrl || '/icon-512x512.png');
+        resolvedSettings = {
+          name: eventData.name || resolvedSettings.name,
+          description: eventData.description ?? resolvedSettings.description,
+          location: eventData.location ?? resolvedSettings.location,
+          eventDate: eventData.event_date || resolvedSettings.eventDate,
+          logoUrl: activeLogo,
           year,
         };
+        setCachedEventSettings(resolvedSettings);
       }
-      set({ guests, attendance, adminPin, eventSettings, isLoading: false });
+      set({ guests, attendance, adminPin, eventSettings: resolvedSettings, isLoading: false });
     } catch (err) {
       set({ error: (err as Error).message, isLoading: false });
     }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useStore } from '@/lib/store';
+import { useStore, DEFAULT_EVENT_SETTINGS } from '@/lib/store';
 import { Eye, EyeOff, LogIn, Lock } from 'lucide-react';
 
 export default function LoginPage() {
@@ -14,15 +14,14 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Derived dari eventSettings (dengan fallback ke nilai default)
-  const logoSrc   = eventSettings?.logoUrl  || '/kkg-pai-logo.jpg';
-  const eventName = eventSettings?.name     || 'E-Registrasi Tamu Undangan';
-  const eventSub  = eventSettings?.location
-    ? `${eventSettings.name} · ${eventSettings.location}`
+  // Derived dari eventSettings (dengan fallback ke logo asli / icon)
+  const settings  = eventSettings || DEFAULT_EVENT_SETTINGS;
+  const logoSrc   = settings.logoUrl || '/icon-512x512.png';
+  const eventName = settings.name || 'E-REGISTRASI MAPSI XXVII';
+  const eventSub  = settings.location
+    ? `${settings.name} · ${settings.location}`
     : 'MAPSI Tingkat Kecamatan Kedungtuban';
-  const badgeText = eventSettings
-    ? `${eventSettings.name} • ${eventSettings.year}`
-    : 'KKG PAI • XXVII • 2026';
+  const badgeText = `${settings.name} • ${settings.year || 2026}`;
 
   useEffect(() => {
     if (isLoggedIn) router.replace('/dashboard');
@@ -44,17 +43,17 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+    <main className="fixed inset-0 overflow-hidden flex items-center justify-center p-3 sm:p-4 select-none">
 
-      {/* ── Animated emerald gradient background ── */}
-      <div className="fixed inset-0 -z-10"
+      {/* ── Background gradient ── */}
+      <div className="absolute inset-0 -z-10"
         style={{
           background: 'linear-gradient(135deg, #022c22 0%, #064e3b 30%, #065f46 60%, #047857 85%, #059669 100%)',
         }}
       />
 
       {/* Isometric grid overlay */}
-      <div className="fixed inset-0 -z-10 opacity-20"
+      <div className="absolute inset-0 -z-10 opacity-20 pointer-events-none"
         style={{
           backgroundImage: `
             linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
@@ -62,65 +61,65 @@ export default function LoginPage() {
             linear-gradient(60deg, rgba(255,255,255,0.03) 1px, transparent 1px),
             linear-gradient(-60deg, rgba(255,255,255,0.03) 1px, transparent 1px)
           `,
-          backgroundSize: '60px 60px, 60px 60px, 70px 70px, 70px 70px',
+          backgroundSize: '50px 50px, 50px 50px, 60px 60px, 60px 60px',
         }}
       />
 
       {/* Floating glow orbs */}
-      <div className="fixed top-20 left-20 w-96 h-96 rounded-full -z-10 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)' }} />
-      <div className="fixed bottom-20 right-20 w-80 h-80 rounded-full -z-10 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(52,211,153,0.12) 0%, transparent 70%)' }} />
+      <div className="absolute top-10 left-10 w-72 h-72 rounded-full -z-10 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%)' }} />
+      <div className="absolute bottom-10 right-10 w-72 h-72 rounded-full -z-10 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%)' }} />
 
       {/* ── Main Login Panel ── */}
-      <div className="w-full max-w-md animate-bounce-in">
+      <div className="w-full max-w-sm sm:max-w-md animate-bounce-in flex flex-col my-auto">
 
         {/* Logo + Header Card */}
-        <div className="relative mb-0 overflow-hidden"
+        <div className="relative overflow-hidden"
           style={{
-            background: 'rgba(255,255,255,0.97)',
+            background: 'rgba(255,255,255,0.98)',
             borderRadius: '16px 16px 0 0',
             borderBottom: '1px solid rgba(5,150,105,0.12)',
-            padding: '2.5rem 2.5rem 2rem',
+            padding: '1.75rem 1.75rem 1.25rem',
           }}>
 
           {/* Top accent bar */}
-          <div className="absolute top-0 left-0 right-0 h-1"
+          <div className="absolute top-0 left-0 right-0 h-1.5"
             style={{ background: 'linear-gradient(90deg, #059669, #34d399, #059669)' }} />
 
           {/* Logo */}
           <div className="flex flex-col items-center text-center">
-            <div className="relative mb-5">
-              <div className="w-32 h-32 rounded-2xl overflow-hidden relative"
+            <div className="relative mb-3">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden relative"
                 style={{
-                  boxShadow: '0 8px 32px rgba(5,150,105,0.25), 0 2px 8px rgba(5,150,105,0.15)',
-                  border: '3px solid rgba(5,150,105,0.15)',
+                  boxShadow: '0 8px 28px rgba(5,150,105,0.22), 0 2px 8px rgba(5,150,105,0.12)',
+                  border: '2.5px solid rgba(5,150,105,0.15)',
                 }}>
                 <Image
                   src={logoSrc}
                   alt={`Logo ${eventName}`}
-                  width={128}
-                  height={128}
-                  className="object-contain w-full h-full bg-white p-2"
+                  width={112}
+                  height={112}
+                  className="object-contain w-full h-full bg-white p-1"
                   priority
                   unoptimized={logoSrc.startsWith('data:')}
                 />
               </div>
               {/* Glow ring */}
               <div className="absolute inset-0 rounded-2xl pointer-events-none"
-                style={{ boxShadow: '0 0 0 6px rgba(5,150,105,0.06)', borderRadius: '16px' }} />
+                style={{ boxShadow: '0 0 0 5px rgba(5,150,105,0.06)' }} />
             </div>
 
-            <h1 className="text-2xl font-extrabold leading-tight"
+            <h1 className="text-xl sm:text-2xl font-black leading-tight truncate max-w-full"
               style={{ color: '#064e3b', letterSpacing: '-0.02em' }}>
               {eventName}
             </h1>
-            <p className="text-sm font-semibold mt-1" style={{ color: '#059669' }}>
+            <p className="text-xs sm:text-sm font-semibold mt-1 truncate max-w-full" style={{ color: '#059669' }}>
               {eventSub}
             </p>
-            <div className="flex items-center gap-3 mt-3">
+            <div className="flex items-center gap-2.5 mt-2.5 w-full">
               <div className="h-px flex-1" style={{ background: 'rgba(5,150,105,0.2)' }} />
-              <span className="text-xs font-bold px-3 py-1 rounded-full"
+              <span className="text-[11px] sm:text-xs font-bold px-3 py-0.5 rounded-full whitespace-nowrap"
                 style={{ background: '#d1fae5', color: '#065f46', border: '1px solid #6ee7b7' }}>
                 {badgeText}
               </span>
@@ -131,28 +130,27 @@ export default function LoginPage() {
 
         {/* Login Form Card */}
         <div style={{
-          background: 'rgba(255,255,255,0.97)',
+          background: 'rgba(255,255,255,0.98)',
           borderRadius: '0 0 16px 16px',
-          padding: '1.75rem 2.5rem 2.5rem',
-          boxShadow: '0 20px 60px rgba(2,44,34,0.35), 0 8px 24px rgba(2,44,34,0.2)',
+          padding: '1.25rem 1.75rem 1.75rem',
+          boxShadow: '0 20px 50px rgba(2,44,34,0.3), 0 6px 20px rgba(2,44,34,0.15)',
         }}>
           {/* Form header */}
-          <div className="flex items-center gap-3 mb-5 pb-4"
+          <div className="flex items-center gap-2.5 mb-3.5 pb-2.5"
             style={{ borderBottom: '1px solid rgba(5,150,105,0.1)' }}>
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{ background: 'linear-gradient(135deg, #059669, #047857)' }}>
-              <Lock size={16} className="text-white" />
+              <Lock size={15} className="text-white" />
             </div>
             <div>
-              <p className="font-bold text-sm" style={{ color: '#064e3b' }}>Login Admin Panitia</p>
-
+              <p className="font-bold text-xs sm:text-sm" style={{ color: '#064e3b' }}>Login Admin Panitia</p>
             </div>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-3.5">
             <div>
               <label htmlFor="pin-input"
-                className="block text-xs font-bold mb-1.5 uppercase tracking-wide"
+                className="block text-[11px] font-bold mb-1 uppercase tracking-wider"
                 style={{ color: '#065f46' }}>
                 PIN Admin
               </label>
@@ -162,28 +160,29 @@ export default function LoginPage() {
                   type={showPin ? 'text' : 'password'}
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
-                  placeholder=""
-                  className="neo-input pr-11"
+                  placeholder="Masukkan PIN"
+                  className="neo-input pr-11 text-sm h-11"
                   maxLength={20}
                   autoComplete="current-password"
                   disabled={loading}
+                  autoFocus
                 />
                 <button
                   type="button"
                   onClick={() => setShowPin((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors p-1"
                   style={{ color: 'rgba(6,78,59,0.45)' }}
                   aria-label={showPin ? 'Sembunyikan PIN' : 'Tampilkan PIN'}
                 >
-                  {showPin ? <EyeOff size={17} /> : <Eye size={17} />}
+                  {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg text-sm animate-slide-in"
+              <div className="flex items-center gap-2 p-2.5 rounded-lg text-xs animate-slide-in"
                 style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#b91c1c' }}>
-                <span className="text-base">⚠️</span>
+                <span className="text-sm">⚠️</span>
                 <span className="font-medium">{error}</span>
               </div>
             )}
@@ -192,8 +191,8 @@ export default function LoginPage() {
               id="btn-login"
               type="submit"
               disabled={loading || !pin}
-              className="neo-btn neo-btn-primary w-full py-3 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ borderRadius: '10px', fontSize: '0.92rem', letterSpacing: '0.01em' }}
+              className="neo-btn neo-btn-primary w-full py-2.5 sm:py-3 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ borderRadius: '10px', fontSize: '0.9rem', letterSpacing: '0.01em' }}
             >
               {loading ? (
                 <>
@@ -202,7 +201,7 @@ export default function LoginPage() {
                 </>
               ) : (
                 <>
-                  <LogIn size={16} />
+                  <LogIn size={15} />
                   Masuk Dashboard
                 </>
               )}
@@ -210,8 +209,8 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs mt-5 font-medium"
-          style={{ color: 'rgba(209,250,229,0.6)' }}>
+        <p className="text-center text-[11px] sm:text-xs mt-3.5 font-medium"
+          style={{ color: 'rgba(209,250,229,0.75)' }}>
           Sistem Absensi Digital MAPSI 2026 · Kecamatan Kedungtuban
         </p>
       </div>

@@ -25,7 +25,7 @@ export default function SettingsPage() {
     logoUrl:     '',   // actual value to save (base64 or URL)
     logoUrlInput:'',   // URL input field (hidden when base64)
   });
-  const [logoPreview,    setLogoPreview]    = useState('/kkg-pai-logo.jpg');
+  const [logoPreview,    setLogoPreview]    = useState('/icon-512x512.png');
   const [logoFromFile,   setLogoFromFile]   = useState(false); // true = uploaded from file
   const [dragging,       setDragging]       = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,7 +65,7 @@ export default function SettingsPage() {
         logoUrl:      eventSettings.logoUrl     || '',
         logoUrlInput: isExternal ? eventSettings.logoUrl : '',
       });
-      setLogoPreview(eventSettings.logoUrl || '/kkg-pai-logo.jpg');
+      setLogoPreview(eventSettings.logoUrl || '/icon-512x512.png');
       setLogoFromFile(eventSettings.logoUrl?.startsWith('data:') ?? false);
     }
   }, [eventSettings]);
@@ -84,7 +84,7 @@ export default function SettingsPage() {
   };
 
   const clearLogo = () => {
-    setLogoPreview('/kkg-pai-logo.jpg');
+    setLogoPreview('/icon-512x512.png');
     setForm((p) => ({ ...p, logoUrl: '', logoUrlInput: '' }));
     setLogoFromFile(false);
   };
@@ -324,7 +324,7 @@ export default function SettingsPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={logoPreview} alt="preview"
                       className="w-full h-full object-contain bg-white p-0.5"
-                      onError={(e) => { (e.target as HTMLImageElement).src = '/kkg-pai-logo.jpg'; }} />
+                      onError={(e) => { (e.target as HTMLImageElement).src = '/icon-512x512.png'; }} />
                   </div>
                   <div className="min-w-0">
                     <p className="font-extrabold text-white text-sm leading-tight truncate">{previewName}</p>
