@@ -8,11 +8,21 @@ import { Eye, EyeOff, LogIn, Lock } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoggedIn } = useStore();
+  const { login, isLoggedIn, eventSettings } = useStore();
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Derived dari eventSettings (dengan fallback ke nilai default)
+  const logoSrc   = eventSettings?.logoUrl  || '/kkg-pai-logo.jpg';
+  const eventName = eventSettings?.name     || 'E-Registrasi Tamu Undangan';
+  const eventSub  = eventSettings?.location
+    ? `${eventSettings.name} · ${eventSettings.location}`
+    : 'MAPSI Tingkat Kecamatan Kedungtuban';
+  const badgeText = eventSettings
+    ? `${eventSettings.name} • ${eventSettings.year}`
+    : 'KKG PAI • XXVII • 2026';
 
   useEffect(() => {
     if (isLoggedIn) router.replace('/dashboard');
@@ -87,12 +97,13 @@ export default function LoginPage() {
                   border: '3px solid rgba(5,150,105,0.15)',
                 }}>
                 <Image
-                  src="/kkg-pai-logo.jpg"
-                  alt="Logo KKG PAI Kecamatan Kedungtuban"
+                  src={logoSrc}
+                  alt={`Logo ${eventName}`}
                   width={128}
                   height={128}
                   className="object-contain w-full h-full bg-white p-2"
                   priority
+                  unoptimized={logoSrc.startsWith('data:')}
                 />
               </div>
               {/* Glow ring */}
@@ -102,16 +113,16 @@ export default function LoginPage() {
 
             <h1 className="text-2xl font-extrabold leading-tight"
               style={{ color: '#064e3b', letterSpacing: '-0.02em' }}>
-              E-Registrasi Tamu Undangan
+              {eventName}
             </h1>
             <p className="text-sm font-semibold mt-1" style={{ color: '#059669' }}>
-              MAPSI Tingkat Kecamatan Kedungtuban
+              {eventSub}
             </p>
             <div className="flex items-center gap-3 mt-3">
               <div className="h-px flex-1" style={{ background: 'rgba(5,150,105,0.2)' }} />
               <span className="text-xs font-bold px-3 py-1 rounded-full"
                 style={{ background: '#d1fae5', color: '#065f46', border: '1px solid #6ee7b7' }}>
-                KKG PAI • XXVII • 2026
+                {badgeText}
               </span>
               <div className="h-px flex-1" style={{ background: 'rgba(5,150,105,0.2)' }} />
             </div>
