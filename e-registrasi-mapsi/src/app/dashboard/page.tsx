@@ -174,8 +174,8 @@ export default function DashboardPage() {
                   {idx + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm truncate" style={{ color: '#064e3b' }}>{guest!.name}</p>
-                  <p className="text-xs truncate font-medium" style={{ color: 'rgba(5,150,105,0.7)' }}>
+                  <p className="font-bold text-sm leading-tight" style={{ color: '#064e3b' }}>{guest!.name}</p>
+                  <p className="text-xs font-medium mt-0.5" style={{ color: 'rgba(5,150,105,0.7)' }}>
                     {guest!.institution}
                   </p>
                 </div>

@@ -645,9 +645,9 @@ export default function GuestsPage() {
                         {guest.invitationId}
                       </code>
                     </td>
-                    <td className="font-semibold" style={{ color: '#064e3b' }}>{truncate(guest.name, 28)}</td>
-                    <td className="text-sm" style={{ color: '#065f46' }}>{truncate(guest.institution, 26)}</td>
-                    <td className="text-sm" style={{ color: '#065f46' }}>{truncate(guest.position, 20)}</td>
+                    <td className="font-semibold text-sm leading-snug" style={{ color: '#064e3b' }}>{guest.name}</td>
+                    <td className="text-sm leading-snug" style={{ color: '#065f46' }}>{guest.institution}</td>
+                    <td className="text-sm leading-snug" style={{ color: '#065f46' }}>{guest.position}</td>
                     <td>
                       {present ? (
                         <span className="neo-badge neo-badge-green"><UserCheck size={11} /> HADIR</span>

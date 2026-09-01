@@ -74,9 +74,21 @@ export async function exportAttendancePDF(
       doc.rect(10, y - 4, pageWidth - 20, 7, 'F');
     }
     doc.text(String(idx + 1), cols[0] + colWidths[0] / 2, y, { align: 'center' });
-    doc.text(guest.name.substring(0, 28), cols[1], y);
-    doc.text(guest.institution.substring(0, 32), cols[2], y);
-    doc.text(guest.position.substring(0, 20), cols[3], y);
+
+    // Dynamic sizing for name, institution, position so long text is never truncated
+    const nameFontSize = guest.name.length > 38 ? 7 : guest.name.length > 28 ? 7.8 : 8.5;
+    doc.setFontSize(nameFontSize);
+    doc.text(guest.name, cols[1], y, { maxWidth: colWidths[1] - 1 });
+
+    const instFontSize = guest.institution.length > 35 ? 7 : 8;
+    doc.setFontSize(instFontSize);
+    doc.text(guest.institution, cols[2], y, { maxWidth: colWidths[2] - 1 });
+
+    const posFontSize = guest.position.length > 22 ? 7 : 8;
+    doc.setFontSize(posFontSize);
+    doc.text(guest.position, cols[3], y, { maxWidth: colWidths[3] - 1 });
+
+    doc.setFontSize(8.5);
     doc.text(record ? formatDate(record.checkinTime).split(',')[0] : '-', cols[4], y);
     doc.text(record ? formatTime(record.checkinTime) : '-', cols[5], y);
     doc.setFont('helvetica', 'bold');
@@ -260,36 +272,42 @@ async function renderQRCardPage(
   doc.line(margin + 15, y, pw - margin - 15, y);
 
   // ── Guest info
-  y += 10;
+  y += 8;
   doc.setTextColor(6, 78, 59);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text(guest.name, cx, y, { align: 'center', maxWidth: pw - margin * 2 });
+  const nameFontSize = guest.name.length > 40 ? 11 : guest.name.length > 28 ? 12.5 : 14;
+  doc.setFontSize(nameFontSize);
+  const nameLines = doc.splitTextToSize(guest.name, pw - margin * 2);
+  doc.text(nameLines, cx, y, { align: 'center' });
+  y += nameLines.length * (nameFontSize * 0.42) + 2;
 
-  y += 7;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+  const posFontSize = guest.position.length > 35 ? 8.5 : 10;
+  doc.setFontSize(posFontSize);
   doc.setTextColor(5, 150, 105);
-  doc.text(guest.position, cx, y, { align: 'center' });
+  const posLines = doc.splitTextToSize(guest.position, pw - margin * 2);
+  doc.text(posLines, cx, y, { align: 'center' });
+  y += posLines.length * (posFontSize * 0.4) + 1.5;
 
-  y += 6;
-  doc.setFontSize(9);
+  const instFontSize = guest.institution.length > 40 ? 8 : 9;
+  doc.setFontSize(instFontSize);
   doc.setTextColor(80, 80, 80);
-  doc.text(guest.institution, cx, y, { align: 'center', maxWidth: pw - margin * 2 });
+  const instLines = doc.splitTextToSize(guest.institution, pw - margin * 2);
+  doc.text(instLines, cx, y, { align: 'center' });
+  y += instLines.length * (instFontSize * 0.4) + 2.5;
 
   // ── Invitation ID badge
-  y += 9;
   const badgeText = guest.invitationId;
   const badgeW = doc.getTextWidth(badgeText) + 10;
   doc.setFillColor(209, 250, 229); // #d1fae5
-  doc.roundedRect(cx - badgeW / 2, y - 4, badgeW, 7, 2, 2, 'F');
+  doc.roundedRect(cx - badgeW / 2, y - 3.5, badgeW, 7, 2, 2, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(6, 95, 70);
-  doc.text(badgeText, cx, y + 1, { align: 'center' });
+  doc.text(badgeText, cx, y + 1.2, { align: 'center' });
 
   // ── Footer
-  y += 14;
+  y += 13;
   doc.setFillColor(240, 253, 248); // very light green
   doc.rect(0, y - 2, pw, 14, 'F');
   doc.setDrawColor(5, 150, 105);
@@ -424,9 +442,10 @@ async function renderMiniQRCard(
 ) {
   const cx = bx + bw / 2;
   const pad = 3;
+  const maxContentWidth = bw - pad * 2 - 4; // ~92mm safe width
 
   // ── Mini green header bar
-  const headerH = 8;
+  const headerH = 7.5;
   doc.setFillColor(6, 78, 59);
   doc.rect(bx + pad, by + pad, bw - pad * 2, headerH, 'F');
 
@@ -447,59 +466,61 @@ async function renderMiniQRCard(
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6);
-  doc.text(eventTitle, cx, by + pad + 3.5, { align: 'center' });
-  doc.setFontSize(4.5);
+  doc.text(eventTitle, cx, by + pad + 3.2, { align: 'center' });
+  doc.setFontSize(4.2);
   doc.setFont('helvetica', 'normal');
-  doc.text(eventLocation, cx, by + pad + 6.5, { align: 'center' });
+  doc.text(eventLocation, cx, by + pad + 6.2, { align: 'center' });
 
-  // ── QR Code (centered, compact)
-  const qrSize = 32;
+  // ── QR Code (centered, compact 27mm)
+  const qrSize = 27;
   const qrX = cx - qrSize / 2;
-  const qrY = by + pad + headerH + 3;
+  const qrY = by + pad + headerH + 2.5;
 
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
-  // ── Guest info below QR
+  // ── Guest info below QR (fully dynamic, no truncation!)
   let ty = qrY + qrSize + 3;
 
-  // Name (bold, truncated)
+  // 1. Guest Name (Dynamic sizing + Multiline wrapping)
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
+  const nameFontSize = guest.name.length > 45 ? 6.2 : guest.name.length > 32 ? 6.8 : 7.5;
+  doc.setFontSize(nameFontSize);
   doc.setTextColor(6, 78, 59);
-  const displayName = guest.name.length > 30 ? guest.name.substring(0, 28) + '…' : guest.name;
-  doc.text(displayName, cx, ty, { align: 'center' });
+  const nameLines = doc.splitTextToSize(guest.name, maxContentWidth);
+  doc.text(nameLines, cx, ty, { align: 'center' });
+  ty += nameLines.length * (nameFontSize * 0.38) + 1;
 
-  // Position
-  ty += 3.5;
+  // 2. Position (Jabatan)
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(5.5);
+  const posFontSize = guest.position.length > 35 ? 5 : 5.6;
+  doc.setFontSize(posFontSize);
   doc.setTextColor(5, 150, 105);
-  const displayPos = guest.position.length > 28 ? guest.position.substring(0, 26) + '…' : guest.position;
-  doc.text(displayPos, cx, ty, { align: 'center' });
+  const posLines = doc.splitTextToSize(guest.position, maxContentWidth);
+  doc.text(posLines, cx, ty, { align: 'center' });
+  ty += posLines.length * (posFontSize * 0.38) + 0.8;
 
-  // Institution
-  ty += 3;
-  doc.setFontSize(5);
-  doc.setTextColor(100, 100, 100);
-  const displayInst = guest.institution.length > 32 ? guest.institution.substring(0, 30) + '…' : guest.institution;
-  doc.text(displayInst, cx, ty, { align: 'center' });
+  // 3. Institution (Instansi / Sekolah)
+  const instFontSize = guest.institution.length > 40 ? 4.6 : 5.2;
+  doc.setFontSize(instFontSize);
+  doc.setTextColor(90, 90, 90);
+  const instLines = doc.splitTextToSize(guest.institution, maxContentWidth);
+  doc.text(instLines, cx, ty, { align: 'center' });
+  ty += instLines.length * (instFontSize * 0.38) + 1.2;
 
-  // Invitation ID badge
-  ty += 3.5;
+  // 4. Invitation ID badge
   const badgeText = guest.invitationId;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5);
+  doc.setFontSize(5.2);
   const badgeW = doc.getTextWidth(badgeText) + 5;
   doc.setFillColor(209, 250, 229);
-  doc.roundedRect(cx - badgeW / 2, ty - 2.5, badgeW, 4, 1, 1, 'F');
+  doc.roundedRect(cx - badgeW / 2, ty - 2.2, badgeW, 3.8, 1, 1, 'F');
   doc.setTextColor(6, 95, 70);
-  doc.text(badgeText, cx, ty, { align: 'center' });
+  doc.text(badgeText, cx, ty + 0.6, { align: 'center' });
 
-  // "Tunjukkan kepada panitia" footer line
-  ty += 4;
+  // 5. "Tunjukkan kepada panitia" footer line (pinned to bottom)
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(4);
-  doc.setTextColor(120, 120, 120);
-  doc.text('Tunjukkan kepada panitia', cx, ty, { align: 'center' });
+  doc.setFontSize(4.2);
+  doc.setTextColor(130, 130, 130);
+  doc.text('Tunjukkan kepada panitia', cx, by + bh - 2.2, { align: 'center' });
 }
 

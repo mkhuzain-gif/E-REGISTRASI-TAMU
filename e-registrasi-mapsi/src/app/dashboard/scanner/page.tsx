@@ -549,8 +549,8 @@ export default function ScannerPage() {
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(5,150,105,0.04)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = '')}>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm truncate" style={{ color: '#064e3b' }}>{guest.name}</p>
-                      <p className="text-xs font-medium truncate" style={{ color: 'rgba(5,150,105,0.7)' }}>
+                      <p className="font-bold text-sm leading-tight" style={{ color: '#064e3b' }}>{guest.name}</p>
+                      <p className="text-xs font-medium mt-0.5" style={{ color: 'rgba(5,150,105,0.7)' }}>
                         {guest.institution} · {guest.position}
                       </p>
                     </div>
