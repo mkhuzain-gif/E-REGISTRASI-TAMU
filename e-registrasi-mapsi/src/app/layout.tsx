@@ -8,13 +8,24 @@ export const metadata: Metadata = {
     'Sistem Registrasi Digital Tamu Undangan MAPSI Tingkat Kecamatan Kedungtuban XXVII Tahun 2026. Absensi berbasis QR Code yang cepat, akurat, dan mudah dikelola panitia.',
   keywords: ['MAPSI', 'Kedungtuban', '2026', 'absensi', 'QR code', 'tamu undangan', 'registrasi'],
   authors: [{ name: 'Panitia MAPSI XXVII Kedungtuban 2026' }],
-  icons: { icon: '/logo.jpg' },
+  icons: {
+    icon: '/icon-192x192.png',
+    apple: '/icon-192x192.png',
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'E-Registrasi MAPSI',
+  },
+  applicationName: 'E-Registrasi MAPSI',
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  themeColor: '#1a6b3a',
 };
 
 export default function RootLayout({
