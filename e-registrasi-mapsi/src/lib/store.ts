@@ -20,6 +20,9 @@ import {
   subscribeGuests,
   subscribeAttendance,
   fetchAdminPin,
+  fetchEventSettings,
+  updateEventSettings as apiUpdateEventSettings,
+  updateAdminPin,
 } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -43,16 +46,31 @@ export interface AttendanceRecord {
   status: 'hadir' | 'tidak_hadir';
 }
 
+export interface EventSettings {
+  name: string;           // Nama acara: "MAPSI XXVII"
+  description: string;    // Deskripsi: "MAPSI Tingkat Kecamatan Kedungtuban XXVII · 2026"
+  location: string;       // Lokasi: "Kecamatan Kedungtuban"
+  eventDate: string;      // Tanggal acara ISO string
+  logoUrl: string;        // URL logo
+  year: number;           // Tahun: 2026
+}
+
 export interface AppState {
   // Auth
   isLoggedIn: boolean;
-  adminPin: string;           // PIN dimuat dari Supabase saat initialize
+  adminPin: string;
   login: (pin: string) => Promise<boolean>;
   logout: () => void;
 
   // Loading state
   isLoading: boolean;
   error: string | null;
+
+  // Event Settings
+  eventSettings: EventSettings | null;
+  loadEventSettings: () => Promise<void>;
+  saveEventSettings: (data: Partial<EventSettings>) => Promise<void>;
+  changeAdminPin: (newPin: string) => Promise<void>;
 
   // Guests (local cache dari Supabase)
   guests: Guest[];
@@ -75,7 +93,7 @@ export interface AppState {
   initialize: () => Promise<void>;
   startRealtime: () => () => void;
 
-  // Backup/Restore (export saja — import tidak lagi relevan dengan Supabase)
+  // Backup/Restore
   exportData: () => string;
 }
 
@@ -88,7 +106,46 @@ const ADMIN_PIN = '123456';
 export const useStore = create<AppState>((set, get) => ({
   // ── Auth ──────────────────────────────────────────────────────────────────
   isLoggedIn: false,
-  adminPin: '123456', // default, akan diganti saat initialize
+  adminPin: '123456',
+
+  // ── Event Settings ────────────────────────────────────────────────────────
+  eventSettings: null,
+
+  loadEventSettings: async () => {
+    const data = await fetchEventSettings();
+    if (data) {
+      const year = data.event_date
+        ? new Date(data.event_date).getFullYear()
+        : 2026;
+      set({
+        eventSettings: {
+          name: data.name,
+          description: data.description ?? '',
+          location: data.location ?? '',
+          eventDate: data.event_date,
+          logoUrl: data.logo_url ?? '/kkg-pai-logo.jpg',
+          year,
+        },
+      });
+    }
+  },
+
+  saveEventSettings: async (input) => {
+    const dbInput: Record<string, unknown> = {};
+    if (input.name        !== undefined) dbInput.name        = input.name;
+    if (input.description !== undefined) dbInput.description = input.description;
+    if (input.location    !== undefined) dbInput.location    = input.location;
+    if (input.logoUrl     !== undefined) dbInput.logo_url    = input.logoUrl;
+    if (input.eventDate   !== undefined) dbInput.event_date  = input.eventDate;
+    await apiUpdateEventSettings(dbInput as Parameters<typeof apiUpdateEventSettings>[0]);
+    // Reload setelah simpan
+    await get().loadEventSettings();
+  },
+
+  changeAdminPin: async (newPin: string) => {
+    await updateAdminPin(newPin);
+    set({ adminPin: newPin });
+  },
 
   login: async (pin: string) => {
     // Selalu bandingkan dengan PIN terbaru dari state (yang sudah di-fetch dari Supabase)
@@ -204,12 +261,27 @@ export const useStore = create<AppState>((set, get) => ({
   initialize: async () => {
     set({ isLoading: true });
     try {
-      const [guests, attendance, adminPin] = await Promise.all([
+      const [guests, attendance, adminPin, eventData] = await Promise.all([
         fetchGuests(),
         fetchAttendance(),
         fetchAdminPin(),
+        fetchEventSettings(),
       ]);
-      set({ guests, attendance, adminPin, isLoading: false });
+      let eventSettings = null;
+      if (eventData) {
+        const year = eventData.event_date
+          ? new Date(eventData.event_date).getFullYear()
+          : 2026;
+        eventSettings = {
+          name: eventData.name,
+          description: eventData.description ?? '',
+          location: eventData.location ?? '',
+          eventDate: eventData.event_date,
+          logoUrl: eventData.logo_url ?? '/kkg-pai-logo.jpg',
+          year,
+        };
+      }
+      set({ guests, attendance, adminPin, eventSettings, isLoading: false });
     } catch (err) {
       set({ error: (err as Error).message, isLoading: false });
     }

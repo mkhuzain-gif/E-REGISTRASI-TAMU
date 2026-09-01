@@ -7,21 +7,22 @@ import Image from 'next/image';
 import { useStore } from '@/lib/store';
 import {
   LayoutDashboard, Users, QrCode, ClipboardList,
-  Download, LogOut, Menu, X,
+  Download, LogOut, Menu, X, Settings,
 } from 'lucide-react';
 
 const navItems = [
-  { href: '/dashboard',            label: 'Dashboard',       icon: LayoutDashboard },
-  { href: '/dashboard/guests',     label: 'Data Tamu',       icon: Users           },
-  { href: '/dashboard/scanner',    label: 'Scanner QR',      icon: QrCode          },
-  { href: '/dashboard/attendance', label: 'Riwayat Absensi', icon: ClipboardList   },
-  { href: '/dashboard/export',     label: 'Ekspor Data',     icon: Download        },
+  { href: '/dashboard',              label: 'Dashboard',       icon: LayoutDashboard },
+  { href: '/dashboard/guests',       label: 'Data Tamu',       icon: Users           },
+  { href: '/dashboard/scanner',      label: 'Scanner QR',      icon: QrCode          },
+  { href: '/dashboard/attendance',   label: 'Riwayat Absensi', icon: ClipboardList   },
+  { href: '/dashboard/export',       label: 'Ekspor Data',     icon: Download        },
+  { href: '/dashboard/settings',     label: 'Pengaturan',      icon: Settings        },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
-  const { isLoggedIn, logout, guests, attendance } = useStore();
+  const { isLoggedIn, logout, guests, attendance, eventSettings } = useStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -38,8 +39,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     (n) => n.href === pathname || (n.href !== '/dashboard' && pathname.startsWith(n.href))
   )?.label ?? 'E-Registrasi MAPSI';
 
+  const eventName = eventSettings?.name ?? 'MAPSI XXVII';
+  const eventSub  = eventSettings?.location
+    ? `${eventSettings.location} ${eventSettings.year ?? 2026}`
+    : `Kedungtuban ${eventSettings?.year ?? 2026}`;
+  const logoSrc   = eventSettings?.logoUrl ?? '/kkg-pai-logo.jpg';
+
   return (
-    <div className="min-h-screen flex" style={{ background: '#f0fdf8' }}>
+    <div className="h-screen flex overflow-hidden" style={{ background: '#f0fdf8' }}>
 
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -52,10 +59,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           fixed top-0 left-0 h-full w-64 z-40 flex flex-col
           transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0 lg:static lg:z-auto
+          lg:translate-x-0 lg:static lg:z-auto lg:h-full lg:flex-shrink-0
         `}
         style={{
-          background: 'linear-gradient(180deg, #022c22 0%, #064e3b 40%, #065f46 100%)',
+          background: 'linear-gradient(180deg, #022c22 0%, #064e3b 40%, #065f46 70%, #047857 100%)',
           boxShadow: '4px 0 24px rgba(2,44,34,0.35)',
         }}
       >
@@ -71,16 +78,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
 
         {/* Logo block */}
-        <div className="relative p-5 flex items-center gap-3"
+        <div className="relative p-5 flex items-center gap-3 flex-shrink-0"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0"
             style={{ border: '2px solid rgba(255,255,255,0.2)', boxShadow: '0 4px 12px rgba(0,0,0,0.25)' }}>
-            <Image src="/kkg-pai-logo.jpg" alt="KKG PAI" width={44} height={44}
-              className="object-contain w-full h-full bg-white p-0.5" />
+            <Image
+              src={logoSrc}
+              alt="Logo"
+              width={44}
+              height={44}
+              className="object-contain w-full h-full bg-white p-0.5"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/kkg-pai-logo.jpg'; }}
+            />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-extrabold text-white text-sm leading-tight">MAPSI XXVII</p>
-            <p className="text-xs font-medium" style={{ color: 'rgba(110,231,183,0.8)' }}>Kedungtuban 2026</p>
+            <p className="font-extrabold text-white text-sm leading-tight truncate">{eventName}</p>
+            <p className="text-xs font-medium truncate" style={{ color: 'rgba(110,231,183,0.8)' }}>{eventSub}</p>
           </div>
           <button className="lg:hidden text-white/60 hover:text-white ml-auto"
             onClick={() => setSidebarOpen(false)} aria-label="Tutup">
@@ -89,7 +102,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Quick stats */}
-        <div className="px-4 py-3 grid grid-cols-2 gap-2"
+        <div className="px-4 py-3 grid grid-cols-2 gap-2 flex-shrink-0"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="rounded-lg p-2.5 text-center"
             style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -103,19 +116,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 py-3 overflow-y-auto space-y-0.5">
+        {/* Nav — flex-1 agar mengisi sisa ruang */}
+        <nav className="flex-1 py-3 overflow-y-auto space-y-0.5 scrollbar-thin">
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
             return (
               <Link key={href} href={href}
                 className={`sidebar-link ${isActive ? 'active' : ''}`}
                 onClick={() => setSidebarOpen(false)}>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
-                  isActive
-                    ? 'bg-white/20'
-                    : 'bg-white/8 group-hover:bg-white/12'
-                }`}
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all`}
                   style={{ background: isActive ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)' }}>
                   <Icon size={16} className={isActive ? 'text-white' : 'text-emerald-300'} />
                 </div>
@@ -129,8 +138,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        {/* Logout */}
-        <div className="p-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        {/* Logout — selalu di bawah */}
+        <div className="p-4 flex-shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <button id="btn-logout" onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-semibold text-sm transition-all"
             style={{ color: 'rgba(252,165,165,0.8)' }}
@@ -150,10 +159,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ── Main ────────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-h-screen min-w-0 iso-bg">
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden iso-bg">
 
         {/* Top bar */}
-        <header className="sticky top-0 z-20 flex items-center gap-4 px-5 py-3.5"
+        <header className="sticky top-0 z-20 flex items-center gap-4 px-5 py-3.5 flex-shrink-0"
           style={{
             background: 'rgba(255,255,255,0.88)',
             backdropFilter: 'blur(12px)',
@@ -172,7 +181,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {activeLabel}
             </h1>
             <p className="text-xs font-medium hidden sm:block" style={{ color: '#059669' }}>
-              MAPSI Tingkat Kecamatan Kedungtuban XXVII · 2026
+              {eventSettings?.description ?? `MAPSI Tingkat Kecamatan Kedungtuban XXVII · 2026`}
             </p>
           </div>
 

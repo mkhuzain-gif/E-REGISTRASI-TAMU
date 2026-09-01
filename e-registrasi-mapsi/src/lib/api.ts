@@ -1,9 +1,9 @@
 /**
- * API functions untuk E-Registrasi MAPSI 2026
+ * API functions untuk E-Registrasi MAPSI
  * Semua operasi database Supabase terpusat di sini.
  */
 
-import { supabase, ACTIVE_EVENT_ID, type DbGuest, type DbAttendance } from '@/lib/supabase';
+import { supabase, ACTIVE_EVENT_ID, type DbGuest, type DbAttendance, type DbEvent } from '@/lib/supabase';
 
 // ─── Admin PIN ────────────────────────────────────────────────────────────────
 
@@ -21,6 +21,49 @@ export async function fetchAdminPin(): Promise<string> {
   }
   console.log('[fetchAdminPin] PIN berhasil dimuat dari Supabase ✅');
   return (data as { admin_pin: string }).admin_pin;
+}
+
+// ─── Event Settings ───────────────────────────────────────────────────────────
+
+/** Ambil pengaturan event aktif dari tabel events */
+export async function fetchEventSettings(): Promise<DbEvent | null> {
+  const { data, error } = await (supabase
+    .from('events') as any)
+    .select('*')
+    .eq('id', ACTIVE_EVENT_ID)
+    .single();
+  if (error) {
+    console.warn('[fetchEventSettings] Gagal:', error?.message);
+    return null;
+  }
+  return data as DbEvent;
+}
+
+/** Update pengaturan event aktif */
+export async function updateEventSettings(input: Partial<{
+  name: string;
+  description: string;
+  location: string;
+  event_date: string;
+  logo_url: string;
+}>) {
+  const { data, error } = await (supabase
+    .from('events') as any)
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq('id', ACTIVE_EVENT_ID)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as DbEvent;
+}
+
+/** Update PIN admin di tabel admin_settings */
+export async function updateAdminPin(newPin: string): Promise<void> {
+  const { error } = await (supabase
+    .from('admin_settings') as any)
+    .update({ admin_pin: newPin })
+    .eq('event_id', ACTIVE_EVENT_ID);
+  if (error) throw error;
 }
 
 
