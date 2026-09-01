@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from 'react';
 import { useStore, type Guest } from '@/lib/store';
 import { generateQRDataURL } from '@/lib/qr';
-import { printElementAsPDF } from '@/lib/pdf';
+import { generateQRCardPDF } from '@/lib/pdf';
 import { formatDateTime } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -14,7 +14,7 @@ import {
 
 export default function GuestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { getGuestById, getAttendanceByGuest, checkIn } = useStore();
+  const { getGuestById, getAttendanceByGuest, checkIn, eventSettings } = useStore();
   const storeGuest = getGuestById(id);
   const [guest, setGuest] = useState<Guest | null>(storeGuest || null);
   const attendance = guest ? getAttendanceByGuest(guest.id) : undefined;
@@ -67,7 +67,19 @@ export default function GuestDetailPage({ params }: { params: Promise<{ id: stri
   };
 
   const printInvitation = async () => {
-    await printElementAsPDF('invitation-card', `Undangan-${guest.invitationId}.pdf`);
+    const logoUrl = eventSettings?.logoUrl || '/icon-512x512.png';
+    const title = eventSettings?.name
+      ? `${eventSettings.name} · ${eventSettings.year || 2026}`
+      : 'MAPSI XXVII · 2026';
+    const location = eventSettings?.location || 'Kecamatan Kedungtuban';
+    await generateQRCardPDF(
+      guest,
+      qrUrl,
+      logoUrl,
+      title,
+      location,
+      `Undangan-${guest.invitationId}.pdf`,
+    );
   };
 
   const shareWhatsApp = () => {

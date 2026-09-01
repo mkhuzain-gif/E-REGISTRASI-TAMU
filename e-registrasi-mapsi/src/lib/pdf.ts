@@ -165,3 +165,192 @@ export async function exportSPJPDF(
 
   doc.save(`SPJ-MAPSI-2026-${Date.now()}.pdf`);
 }
+
+// ─── Helper: Load image as base64 for jsPDF ──────────────────────────────────
+
+async function loadImageAsBase64(src: string): Promise<string | null> {
+  try {
+    // Already base64
+    if (src.startsWith('data:')) return src;
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ─── Helper: Render a single QR card page on a jsPDF doc ─────────────────────
+
+async function renderQRCardPage(
+  doc: jsPDF,
+  guest: { name: string; institution: string; position: string; invitationId: string },
+  qrDataUrl: string,
+  logoBase64: string | null,
+  eventTitle: string,
+  eventLocation: string,
+) {
+  const pw = doc.internal.pageSize.getWidth();   // ~148mm for A5
+  const ph = doc.internal.pageSize.getHeight();  // ~210mm for A5
+  const cx = pw / 2;
+  const margin = 12;
+
+  // ── Background
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, pw, ph, 'F');
+
+  // ── Green header bar
+  const headerH = 22;
+  doc.setFillColor(6, 78, 59); // #064e3b
+  doc.rect(0, 0, pw, headerH, 'F');
+
+  // Logo in top-left of header
+  if (logoBase64) {
+    try {
+      const logoSize = 14;
+      const logoY = (headerH - logoSize) / 2;
+      // White background behind logo
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(margin - 1, logoY - 1, logoSize + 2, logoSize + 2, 2, 2, 'F');
+      doc.addImage(logoBase64, 'PNG', margin, logoY, logoSize, logoSize);
+    } catch {
+      // Ignore logo errors
+    }
+  }
+
+  // Header text
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text(eventTitle, cx, 9, { align: 'center' });
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(eventLocation, cx, 16, { align: 'center' });
+
+  // ── QR Code (large, centered)
+  const qrSize = 72;
+  const qrX = (pw - qrSize) / 2;
+  const qrY = headerH + 12;
+
+  // QR background with subtle border
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 3, 3, 'FD');
+
+  doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+
+  // ── Divider
+  let y = qrY + qrSize + 14;
+  doc.setDrawColor(5, 150, 105);
+  doc.setLineWidth(0.4);
+  doc.line(margin + 15, y, pw - margin - 15, y);
+
+  // ── Guest info
+  y += 10;
+  doc.setTextColor(6, 78, 59);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text(guest.name, cx, y, { align: 'center', maxWidth: pw - margin * 2 });
+
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(5, 150, 105);
+  doc.text(guest.position, cx, y, { align: 'center' });
+
+  y += 6;
+  doc.setFontSize(9);
+  doc.setTextColor(80, 80, 80);
+  doc.text(guest.institution, cx, y, { align: 'center', maxWidth: pw - margin * 2 });
+
+  // ── Invitation ID badge
+  y += 9;
+  const badgeText = guest.invitationId;
+  const badgeW = doc.getTextWidth(badgeText) + 10;
+  doc.setFillColor(209, 250, 229); // #d1fae5
+  doc.roundedRect(cx - badgeW / 2, y - 4, badgeW, 7, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(6, 95, 70);
+  doc.text(badgeText, cx, y + 1, { align: 'center' });
+
+  // ── Footer
+  y += 14;
+  doc.setFillColor(240, 253, 248); // very light green
+  doc.rect(0, y - 2, pw, 14, 'F');
+  doc.setDrawColor(5, 150, 105);
+  doc.setLineWidth(0.2);
+  doc.line(0, y - 2, pw, y - 2);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(6, 95, 70);
+  doc.text('Tunjukkan kepada panitia', cx, y + 5, { align: 'center' });
+
+  // ── Bottom credit
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6);
+  doc.setTextColor(150, 150, 150);
+  doc.text('E-Registrasi MAPSI · QR Code Undangan', cx, ph - 5, { align: 'center' });
+}
+
+/**
+ * Generate a single QR card PDF for one guest (with logo from settings).
+ * Replaces the old html2canvas-based approach to prevent content being cut off.
+ */
+export async function generateQRCardPDF(
+  guest: { name: string; institution: string; position: string; invitationId: string },
+  qrDataUrl: string,
+  logoUrl: string,
+  eventTitle: string,
+  eventLocation: string,
+  filename: string,
+): Promise<void> {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+  const logoBase64 = await loadImageAsBase64(logoUrl);
+
+  await renderQRCardPage(doc, guest, qrDataUrl, logoBase64, eventTitle, eventLocation);
+
+  doc.save(filename);
+}
+
+/**
+ * Generate a multi-page PDF with QR cards for multiple guests (bulk print).
+ * Each guest gets their own A5 page with logo, QR code, and info.
+ */
+export async function generateBulkQRCardsPDF(
+  guests: Array<{ name: string; institution: string; position: string; invitationId: string }>,
+  generateQR: (invitationId: string, name: string) => Promise<string>,
+  logoUrl: string,
+  eventTitle: string,
+  eventLocation: string,
+): Promise<void> {
+  if (!guests.length) return;
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+  const logoBase64 = await loadImageAsBase64(logoUrl);
+
+  for (let i = 0; i < guests.length; i++) {
+    if (i > 0) doc.addPage();
+
+    const guest = guests[i];
+    const qrDataUrl = await generateQR(guest.invitationId, guest.name);
+
+    await renderQRCardPage(doc, guest, qrDataUrl, logoBase64, eventTitle, eventLocation);
+  }
+
+  doc.save(`QR-Undangan-Semua-Tamu-${Date.now()}.pdf`);
+}

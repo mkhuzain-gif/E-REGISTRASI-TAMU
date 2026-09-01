@@ -3,9 +3,11 @@
 import { useState, useCallback, useTransition, useRef } from 'react';
 import { useStore, Guest } from '@/lib/store';
 import { truncate, formatDateTime } from '@/lib/utils';
+import { generateQRDataURL } from '@/lib/qr';
+import { generateBulkQRCardsPDF } from '@/lib/pdf';
 import Link from 'next/link';
 import {
-  Plus, Search, Edit2, Trash2, QrCode,
+  Plus, Search, Edit2, Trash2, QrCode, Printer,
   UserCheck, UserX, X, Save, RefreshCw,
   FileSpreadsheet, Download, Upload, ClipboardCopy, CheckCircle2, AlertTriangle,
 } from 'lucide-react';
@@ -449,7 +451,7 @@ function BulkImportModal({
 
 // ─── Main Guests Page ──────────────────────────────────────────────────────────
 export default function GuestsPage() {
-  const { guests, attendance, addGuest, addBulkGuests, updateGuest, deleteGuest, isLoading } = useStore();
+  const { guests, attendance, addGuest, addBulkGuests, updateGuest, deleteGuest, isLoading, eventSettings } = useStore();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'hadir' | 'belum'>('all');
@@ -457,6 +459,7 @@ export default function GuestsPage() {
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [isBulkPrinting, setIsBulkPrinting] = useState(false);
 
   const showToast = (ok: boolean, text: string) => {
     setToastMessage({ ok, text });
@@ -507,6 +510,30 @@ export default function GuestsPage() {
 
   const presentCount = guests.filter((g) => getStatus(g.id)).length;
 
+  const handleBulkPrintQR = async () => {
+    if (!filtered.length) return;
+    setIsBulkPrinting(true);
+    try {
+      const logoUrl = eventSettings?.logoUrl || '/icon-512x512.png';
+      const title = eventSettings?.name
+        ? `${eventSettings.name} · ${eventSettings.year || 2026}`
+        : 'MAPSI XXVII · 2026';
+      const location = eventSettings?.location || 'Kecamatan Kedungtuban';
+      await generateBulkQRCardsPDF(
+        filtered,
+        generateQRDataURL,
+        logoUrl,
+        title,
+        location,
+      );
+      showToast(true, `PDF berhasil dibuat untuk ${filtered.length} QR Code tamu!`);
+    } catch (err: any) {
+      showToast(false, `Gagal mencetak QR massal: ${err?.message || err}`);
+    } finally {
+      setIsBulkPrinting(false);
+    }
+  };
+
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Toast Alert */}
@@ -534,6 +561,16 @@ export default function GuestsPage() {
 
         {/* Action buttons */}
         <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
+          <button
+            id="btn-bulk-print-qr"
+            onClick={handleBulkPrintQR}
+            disabled={isBulkPrinting || filtered.length === 0}
+            className="neo-btn neo-btn-outline px-3.5 py-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5 disabled:opacity-50"
+            title={`Cetak semua QR Code (${filtered.length} tamu)`}
+          >
+            <Printer size={15} /> {isBulkPrinting ? 'Memproses...' : `Cetak Semua QR (${filtered.length})`}
+          </button>
+
           <button
             id="btn-import-excel"
             onClick={() => setShowBulkModal(true)}
