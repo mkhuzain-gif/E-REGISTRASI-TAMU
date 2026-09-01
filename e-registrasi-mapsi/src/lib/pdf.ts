@@ -329,7 +329,8 @@ export async function generateQRCardPDF(
 
 /**
  * Generate a multi-page PDF with QR cards for multiple guests (bulk print).
- * Each guest gets their own A5 page with logo, QR code, and info.
+ * Uses F4 paper (215.9mm × 330mm) with 8 cards per page (2 cols × 4 rows).
+ * Cards are separated by dotted cut-lines for easy cutting.
  */
 export async function generateBulkQRCardsPDF(
   guests: Array<{ name: string; institution: string; position: string; invitationId: string }>,
@@ -340,17 +341,165 @@ export async function generateBulkQRCardsPDF(
 ): Promise<void> {
   if (!guests.length) return;
 
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+  // F4 paper: 215.9mm × 330.2mm
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [215.9, 330.2] });
   const logoBase64 = await loadImageAsBase64(logoUrl);
 
-  for (let i = 0; i < guests.length; i++) {
-    if (i > 0) doc.addPage();
+  const pw = 215.9;
+  const ph = 330.2;
+  const cols = 2;
+  const rows = 4;
+  const cardsPerPage = cols * rows; // 8
 
-    const guest = guests[i];
-    const qrDataUrl = await generateQR(guest.invitationId, guest.name);
+  const marginX = 6;
+  const marginY = 6;
+  const cardW = (pw - marginX * 2) / cols;   // ~101.95mm
+  const cardH = (ph - marginY * 2) / rows;   // ~79.55mm
 
-    await renderQRCardPage(doc, guest, qrDataUrl, logoBase64, eventTitle, eventLocation);
+  const totalPages = Math.ceil(guests.length / cardsPerPage);
+
+  for (let page = 0; page < totalPages; page++) {
+    if (page > 0) doc.addPage();
+
+    // Draw dotted cut lines for this page
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.15);
+    doc.setLineDashPattern([1.5, 1.5], 0);
+
+    // Vertical center line
+    const midX = marginX + cardW;
+    doc.line(midX, marginY, midX, ph - marginY);
+
+    // Horizontal lines between rows
+    for (let r = 1; r < rows; r++) {
+      const lineY = marginY + cardH * r;
+      doc.line(marginX, lineY, pw - marginX, lineY);
+    }
+
+    // Outer border (optional, very light)
+    doc.setDrawColor(220, 220, 220);
+    doc.rect(marginX, marginY, pw - marginX * 2, ph - marginY * 2);
+
+    // Reset dash pattern
+    doc.setLineDashPattern([], 0);
+
+    // Render each card on this page
+    for (let slot = 0; slot < cardsPerPage; slot++) {
+      const guestIdx = page * cardsPerPage + slot;
+      if (guestIdx >= guests.length) break;
+
+      const guest = guests[guestIdx];
+      const col = slot % cols;
+      const row = Math.floor(slot / cols);
+
+      const x = marginX + col * cardW;
+      const y = marginY + row * cardH;
+
+      const qrDataUrl = await generateQR(guest.invitationId, guest.name);
+
+      // Render mini card inside the bounding box (x, y, cardW, cardH)
+      await renderMiniQRCard(doc, guest, qrDataUrl, logoBase64, eventTitle, eventLocation, x, y, cardW, cardH);
+    }
+
+    // Page number at very bottom
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(170, 170, 170);
+    doc.text(`Hal. ${page + 1}/${totalPages} — E-Registrasi MAPSI`, pw / 2, ph - 1.5, { align: 'center' });
   }
 
   doc.save(`QR-Undangan-Semua-Tamu-${Date.now()}.pdf`);
 }
+
+// ─── Helper: Render a compact mini QR card in a given bounding box ───────────
+
+async function renderMiniQRCard(
+  doc: jsPDF,
+  guest: { name: string; institution: string; position: string; invitationId: string },
+  qrDataUrl: string,
+  logoBase64: string | null,
+  eventTitle: string,
+  eventLocation: string,
+  bx: number, by: number, bw: number, bh: number,
+) {
+  const cx = bx + bw / 2;
+  const pad = 3;
+
+  // ── Mini green header bar
+  const headerH = 8;
+  doc.setFillColor(6, 78, 59);
+  doc.rect(bx + pad, by + pad, bw - pad * 2, headerH, 'F');
+
+  // Logo in header (tiny)
+  if (logoBase64) {
+    try {
+      const logoSize = 5;
+      const logoY = by + pad + (headerH - logoSize) / 2;
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(bx + pad + 1.5, logoY - 0.5, logoSize + 1, logoSize + 1, 1, 1, 'F');
+      doc.addImage(logoBase64, 'PNG', bx + pad + 2, logoY, logoSize, logoSize);
+    } catch {
+      // Ignore logo errors
+    }
+  }
+
+  // Header text
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6);
+  doc.text(eventTitle, cx, by + pad + 3.5, { align: 'center' });
+  doc.setFontSize(4.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text(eventLocation, cx, by + pad + 6.5, { align: 'center' });
+
+  // ── QR Code (centered, compact)
+  const qrSize = 32;
+  const qrX = cx - qrSize / 2;
+  const qrY = by + pad + headerH + 3;
+
+  doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+
+  // ── Guest info below QR
+  let ty = qrY + qrSize + 3;
+
+  // Name (bold, truncated)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(6, 78, 59);
+  const displayName = guest.name.length > 30 ? guest.name.substring(0, 28) + '…' : guest.name;
+  doc.text(displayName, cx, ty, { align: 'center' });
+
+  // Position
+  ty += 3.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5.5);
+  doc.setTextColor(5, 150, 105);
+  const displayPos = guest.position.length > 28 ? guest.position.substring(0, 26) + '…' : guest.position;
+  doc.text(displayPos, cx, ty, { align: 'center' });
+
+  // Institution
+  ty += 3;
+  doc.setFontSize(5);
+  doc.setTextColor(100, 100, 100);
+  const displayInst = guest.institution.length > 32 ? guest.institution.substring(0, 30) + '…' : guest.institution;
+  doc.text(displayInst, cx, ty, { align: 'center' });
+
+  // Invitation ID badge
+  ty += 3.5;
+  const badgeText = guest.invitationId;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(5);
+  const badgeW = doc.getTextWidth(badgeText) + 5;
+  doc.setFillColor(209, 250, 229);
+  doc.roundedRect(cx - badgeW / 2, ty - 2.5, badgeW, 4, 1, 1, 'F');
+  doc.setTextColor(6, 95, 70);
+  doc.text(badgeText, cx, ty, { align: 'center' });
+
+  // "Tunjukkan kepada panitia" footer line
+  ty += 4;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(4);
+  doc.setTextColor(120, 120, 120);
+  doc.text('Tunjukkan kepada panitia', cx, ty, { align: 'center' });
+}
+
