@@ -451,13 +451,15 @@ function BulkImportModal({
 
 // ─── Main Guests Page ──────────────────────────────────────────────────────────
 export default function GuestsPage() {
-  const { guests, attendance, addGuest, addBulkGuests, updateGuest, deleteGuest, isLoading, eventSettings } = useStore();
+  const { guests, attendance, addGuest, addBulkGuests, updateGuest, deleteGuest, deleteBulkGuests, isLoading, eventSettings } = useStore();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'hadir' | 'belum'>('all');
   const [modal, setModal] = useState<null | 'add' | Guest>(null);
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [isBulkPrinting, setIsBulkPrinting] = useState(false);
 
@@ -481,6 +483,40 @@ export default function GuestsPage() {
       (filterStatus === 'belum' && !isPresent);
     return matchSearch && matchFilter;
   });
+
+  const isAllSelected = filtered.length > 0 && filtered.every((g) => selectedIds.includes(g.id));
+  const isSomeSelected = selectedIds.length > 0 && !isAllSelected;
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      const filteredIdSet = new Set(filtered.map((g) => g.id));
+      setSelectedIds((prev) => prev.filter((id) => !filteredIdSet.has(id)));
+    } else {
+      const filteredIds = filtered.map((g) => g.id);
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
+    }
+  };
+
+  const handleToggleSelectOne = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleExecuteBulkDelete = () => {
+    if (!selectedIds.length) return;
+    startTransition(async () => {
+      try {
+        const count = selectedIds.length;
+        await deleteBulkGuests(selectedIds);
+        showToast(true, `Berhasil menghapus ${count} data tamu terpilih.`);
+        setSelectedIds([]);
+        setConfirmBulkDelete(false);
+      } catch (err: any) {
+        showToast(false, `Gagal menghapus tamu: ${err?.message || err}`);
+      }
+    });
+  };
 
   const handleSave = (data: GuestFormData) => {
     startTransition(async () => {
@@ -511,7 +547,11 @@ export default function GuestsPage() {
   const presentCount = guests.filter((g) => getStatus(g.id)).length;
 
   const handleBulkPrintQR = async () => {
-    if (!filtered.length) return;
+    const targetGuests = selectedIds.length > 0
+      ? guests.filter((g) => selectedIds.includes(g.id))
+      : filtered;
+
+    if (!targetGuests.length) return;
     setIsBulkPrinting(true);
     try {
       const logoUrl = eventSettings?.logoUrl || '/icon-512x512.png';
@@ -520,13 +560,13 @@ export default function GuestsPage() {
         : 'MAPSI XXVII · 2026';
       const location = eventSettings?.location || 'Kecamatan Kedungtuban';
       await generateBulkQRCardsPDF(
-        filtered,
+        targetGuests,
         generateQRDataURL,
         logoUrl,
         title,
         location,
       );
-      showToast(true, `PDF berhasil dibuat untuk ${filtered.length} QR Code tamu!`);
+      showToast(true, `PDF berhasil dibuat untuk ${targetGuests.length} QR Code tamu!`);
     } catch (err: any) {
       showToast(false, `Gagal mencetak QR massal: ${err?.message || err}`);
     } finally {
@@ -564,11 +604,11 @@ export default function GuestsPage() {
           <button
             id="btn-bulk-print-qr"
             onClick={handleBulkPrintQR}
-            disabled={isBulkPrinting || filtered.length === 0}
+            disabled={isBulkPrinting || (selectedIds.length === 0 && filtered.length === 0)}
             className="neo-btn neo-btn-outline px-3.5 py-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5 disabled:opacity-50"
-            title={`Cetak semua QR Code (${filtered.length} tamu)`}
+            title={selectedIds.length > 0 ? `Cetak QR ${selectedIds.length} tamu terpilih` : `Cetak semua QR (${filtered.length} tamu)`}
           >
-            <Printer size={15} /> {isBulkPrinting ? 'Memproses...' : `Cetak Semua QR (${filtered.length})`}
+            <Printer size={15} /> {isBulkPrinting ? 'Memproses...' : selectedIds.length > 0 ? `Cetak QR (${selectedIds.length} Terpilih)` : `Cetak Semua QR (${filtered.length})`}
           </button>
 
           <button
@@ -609,11 +649,59 @@ export default function GuestsPage() {
         </div>
       </div>
 
+      {/* Selection Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950 to-emerald-900 text-white flex flex-wrap items-center justify-between gap-3 shadow-lg border border-emerald-700/60 animate-slide-in">
+          <div className="flex items-center gap-3">
+            <span className="w-8 h-8 rounded-lg bg-emerald-800 flex items-center justify-center font-extrabold text-sm border border-emerald-600">
+              {selectedIds.length}
+            </span>
+            <div>
+              <p className="text-sm font-bold leading-tight">
+                {selectedIds.length} tamu telah ditandai
+              </p>
+              <p className="text-xs text-emerald-300">
+                Pilih aksi massal untuk tamu yang ditandai
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-2 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-emerald-100 transition-colors border border-white/15"
+            >
+              Batal Tandai
+            </button>
+
+            <button
+              id="btn-bulk-delete"
+              onClick={() => setConfirmBulkDelete(true)}
+              className="neo-btn neo-btn-danger px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-md"
+            >
+              <Trash2 size={14} /> Hapus ({selectedIds.length}) Tamu Sekaligus
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="neo-card overflow-x-auto" style={{ padding: 0 }}>
         <table className="neo-table">
           <thead>
             <tr>
+              <th className="w-10 text-center">
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = isSomeSelected;
+                  }}
+                  onChange={handleToggleSelectAll}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+                  title={isAllSelected ? 'Batalkan tanda semua' : 'Tandai semua yang ditampilkan'}
+                />
+              </th>
               <th className="w-10 text-center">No</th>
               <th>ID Undangan</th>
               <th>Nama</th>
@@ -627,7 +715,7 @@ export default function GuestsPage() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-12" style={{ color: 'rgba(5,150,105,0.5)' }}>
+                <td colSpan={9} className="text-center py-12" style={{ color: 'rgba(5,150,105,0.5)' }}>
                   <RefreshCw size={28} className="mx-auto mb-2 opacity-40" />
                   <p className="font-bold text-sm">Tidak ada data ditemukan</p>
                 </td>
@@ -636,8 +724,18 @@ export default function GuestsPage() {
               filtered.map((guest, idx) => {
                 const present = getStatus(guest.id);
                 const record = attendance.find((a) => a.guestId === guest.id && a.status === 'hadir');
+                const isSelected = selectedIds.includes(guest.id);
                 return (
-                  <tr key={guest.id} className="animate-fade-in">
+                  <tr key={guest.id} className={`animate-fade-in transition-colors ${isSelected ? 'bg-emerald-50/90' : ''}`}>
+                    <td className="text-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelectOne(guest.id)}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+                        title={`Tandai ${guest.name}`}
+                      />
+                    </td>
                     <td className="font-bold text-center text-sm" style={{ color: 'rgba(5,150,105,0.6)' }}>{idx + 1}</td>
                     <td>
                       <code className="text-xs px-2 py-0.5 rounded font-mono font-semibold"
@@ -699,7 +797,7 @@ export default function GuestsPage() {
         />
       )}
 
-      {/* Confirm Delete Dialog */}
+      {/* Confirm Delete Single Dialog */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="w-full max-w-sm p-6 animate-bounce-in rounded-xl bg-white"
@@ -723,6 +821,37 @@ export default function GuestsPage() {
               }}
                 className="neo-btn neo-btn-danger flex-1 py-2.5 rounded-lg text-sm">
                 <Trash2 size={14} /> {isPending ? 'Menghapus...' : 'Hapus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Bulk Delete Dialog */}
+      {confirmBulkDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-sm p-6 animate-bounce-in rounded-xl bg-white"
+            style={{ boxShadow: '0 20px 60px rgba(220,38,38,0.25)', border: '1px solid rgba(220,38,38,0.25)' }}>
+            <h3 className="font-extrabold text-lg mb-2" style={{ color: '#991b1b' }}>
+              🗑️ Hapus {selectedIds.length} Tamu Terpilih?
+            </h3>
+            <p className="text-sm mb-5 text-gray-600">
+              Semua <strong className="text-gray-900">{selectedIds.length} tamu yang Anda tandai</strong> beserta seluruh catatan absensinya akan dihapus permanen sekaligus dari sistem.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmBulkDelete(false)}
+                className="neo-btn neo-btn-outline flex-1 py-2.5 rounded-lg text-sm"
+              >
+                Batal
+              </button>
+              <button
+                id="btn-confirm-bulk-delete"
+                disabled={isPending}
+                onClick={handleExecuteBulkDelete}
+                className="neo-btn neo-btn-danger flex-1 py-2.5 rounded-lg text-sm font-bold"
+              >
+                <Trash2 size={14} /> {isPending ? 'Menghapus...' : `Ya, Hapus (${selectedIds.length})`}
               </button>
             </div>
           </div>

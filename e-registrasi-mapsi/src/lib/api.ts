@@ -256,6 +256,16 @@ export async function deleteGuest(id: string) {
   if (error) throw error;
 }
 
+/** Hapus banyak tamu sekaligus */
+export async function deleteBulkGuests(ids: string[]) {
+  if (!ids.length) return;
+  const { error } = await (supabase
+    .from('guests') as any)
+    .delete()
+    .in('id', ids);
+  if (error) throw error;
+}
+
 // ─── Attendance ───────────────────────────────────────────────────────────────
 
 /** Ambil semua rekaman absensi event aktif */

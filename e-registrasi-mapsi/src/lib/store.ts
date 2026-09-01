@@ -15,6 +15,7 @@ import {
   createGuest,
   updateGuest as apiUpdateGuest,
   deleteGuest as apiDeleteGuest,
+  deleteBulkGuests as apiDeleteBulkGuests,
   checkInGuest,
   clearAttendance as apiClearAttendance,
   subscribeGuests,
@@ -79,6 +80,7 @@ export interface AppState {
   addBulkGuests: (dataList: Array<Omit<Guest, 'id' | 'invitationId' | 'createdAt'>>) => Promise<Guest[]>;
   updateGuest: (id: string, data: Partial<Omit<Guest, 'id' | 'invitationId' | 'createdAt'>>) => Promise<void>;
   deleteGuest: (id: string) => Promise<void>;
+  deleteBulkGuests: (ids: string[]) => Promise<void>;
   getGuestById: (id: string) => Guest | undefined;
   getGuestByInvitationId: (invId: string) => Guest | undefined;
 
@@ -307,6 +309,16 @@ export const useStore = create<AppState>((set, get) => ({
     set((s) => ({
       guests: s.guests.filter((g) => g.id !== id),
       attendance: s.attendance.filter((a) => a.guestId !== id),
+    }));
+  },
+
+  deleteBulkGuests: async (ids) => {
+    if (!ids.length) return;
+    await apiDeleteBulkGuests(ids);
+    const idSet = new Set(ids);
+    set((s) => ({
+      guests: s.guests.filter((g) => !idSet.has(g.id)),
+      attendance: s.attendance.filter((a) => !idSet.has(a.guestId)),
     }));
   },
 
