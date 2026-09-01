@@ -14,7 +14,6 @@ import {
   BarChart3,
   Users,
   CheckCircle2,
-  Sparkles,
   ArrowRight,
 } from 'lucide-react';
 
@@ -145,8 +144,7 @@ export default function LoginPage() {
                 <p className="text-sm font-medium text-emerald-300/90 mt-1">
                   {eventSub}
                 </p>
-                <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-md border border-emerald-600/30">
-                  <Sparkles size={12} className="text-emerald-400" />
+                <div className="mt-2 inline-flex items-center text-[11px] font-semibold text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-md border border-emerald-600/30">
                   KORWIL BINDIK & KKG PAI KEDUNGTUBAN
                 </div>
               </div>
@@ -190,7 +188,6 @@ export default function LoginPage() {
               <CheckCircle2 size={14} className="text-emerald-400" />
               <span>Koneksi Database Cloud Aktif</span>
             </div>
-            <span className="text-slate-400">v2.4 Pro Edition</span>
           </div>
         </div>
 
@@ -289,13 +286,9 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Security Guarantee Footer */}
-          <div className="mt-8 pt-5 border-t border-slate-100 flex flex-col items-center text-center gap-1.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-              <ShieldCheck size={14} className="text-emerald-600" />
-              <span>Enkripsi PIN 256-Bit • Supabase Cloud Verified</span>
-            </div>
-            <p className="text-[10px] text-slate-400">
+          {/* Footer */}
+          <div className="mt-8 pt-5 border-t border-slate-100 flex flex-col items-center text-center">
+            <p className="text-[11px] text-slate-400 font-medium">
               Hak Cipta © {eventYear} Panitia MAPSI Kecamatan Kedungtuban
             </p>
           </div>
