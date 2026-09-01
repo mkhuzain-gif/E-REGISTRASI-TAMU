@@ -47,14 +47,11 @@ export async function updateEventSettings(input: Partial<{
   event_date: string;
   logo_url: string;
 }>) {
-  const { data, error } = await (supabase
+  const { error } = await (supabase
     .from('events') as any)
     .update({ ...input, updated_at: new Date().toISOString() })
-    .eq('id', ACTIVE_EVENT_ID)
-    .select()
-    .single();
+    .eq('id', ACTIVE_EVENT_ID);
   if (error) throw error;
-  return data as DbEvent;
 }
 
 /** Update PIN admin di tabel admin_settings */
