@@ -441,8 +441,8 @@ async function renderMiniQRCard(
   bx: number, by: number, bw: number, bh: number,
 ) {
   const cx = bx + bw / 2;
-  const pad = 3;
-  const maxContentWidth = bw - pad * 2 - 4; // ~92mm safe width
+  const pad = 2.5;
+  const maxContentWidth = bw - pad * 2 - 4; // ~93mm safe width
 
   // ── Mini green header bar
   const headerH = 7.5;
@@ -452,7 +452,7 @@ async function renderMiniQRCard(
   // Logo in header (tiny)
   if (logoBase64) {
     try {
-      const logoSize = 5;
+      const logoSize = 5.2;
       const logoY = by + pad + (headerH - logoSize) / 2;
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(bx + pad + 1.5, logoY - 0.5, logoSize + 1, logoSize + 1, 1, 1, 'F');
@@ -465,42 +465,48 @@ async function renderMiniQRCard(
   // Header text
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6);
+  doc.setFontSize(6.2);
   doc.text(eventTitle, cx, by + pad + 3.2, { align: 'center' });
-  doc.setFontSize(4.2);
+  doc.setFontSize(4.4);
   doc.setFont('helvetica', 'normal');
   doc.text(eventLocation, cx, by + pad + 6.2, { align: 'center' });
 
-  // ── QR Code (centered, compact 27mm)
-  const qrSize = 27;
+  // ── QR Code (enlarged to 36mm for fast & easy scanning)
+  const qrSize = 36;
   const qrX = cx - qrSize / 2;
-  const qrY = by + pad + headerH + 2.5;
+  const qrY = by + pad + headerH + 2;
+
+  // QR background card with subtle border for high scan contrast
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(225, 225, 225);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(qrX - 1, qrY - 1, qrSize + 2, qrSize + 2, 1.5, 1.5, 'FD');
 
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
   // ── Guest info below QR (fully dynamic, no truncation!)
-  let ty = qrY + qrSize + 3;
+  let ty = qrY + qrSize + 2.8;
 
   // 1. Guest Name (Dynamic sizing + Multiline wrapping)
   doc.setFont('helvetica', 'bold');
-  const nameFontSize = guest.name.length > 45 ? 6.2 : guest.name.length > 32 ? 6.8 : 7.5;
+  const nameFontSize = guest.name.length > 45 ? 6.5 : guest.name.length > 32 ? 7.2 : 8;
   doc.setFontSize(nameFontSize);
   doc.setTextColor(6, 78, 59);
   const nameLines = doc.splitTextToSize(guest.name, maxContentWidth);
   doc.text(nameLines, cx, ty, { align: 'center' });
-  ty += nameLines.length * (nameFontSize * 0.38) + 1;
+  ty += nameLines.length * (nameFontSize * 0.38) + 0.8;
 
   // 2. Position (Jabatan)
   doc.setFont('helvetica', 'normal');
-  const posFontSize = guest.position.length > 35 ? 5 : 5.6;
+  const posFontSize = guest.position.length > 35 ? 5.2 : 5.8;
   doc.setFontSize(posFontSize);
   doc.setTextColor(5, 150, 105);
   const posLines = doc.splitTextToSize(guest.position, maxContentWidth);
   doc.text(posLines, cx, ty, { align: 'center' });
-  ty += posLines.length * (posFontSize * 0.38) + 0.8;
+  ty += posLines.length * (posFontSize * 0.38) + 0.6;
 
   // 3. Institution (Instansi / Sekolah)
-  const instFontSize = guest.institution.length > 40 ? 4.6 : 5.2;
+  const instFontSize = guest.institution.length > 40 ? 4.8 : 5.4;
   doc.setFontSize(instFontSize);
   doc.setTextColor(90, 90, 90);
   const instLines = doc.splitTextToSize(guest.institution, maxContentWidth);
@@ -510,7 +516,7 @@ async function renderMiniQRCard(
   // 4. Invitation ID badge
   const badgeText = guest.invitationId;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5.2);
+  doc.setFontSize(5.4);
   const badgeW = doc.getTextWidth(badgeText) + 5;
   doc.setFillColor(209, 250, 229);
   doc.roundedRect(cx - badgeW / 2, ty - 2.2, badgeW, 3.8, 1, 1, 'F');
@@ -519,7 +525,7 @@ async function renderMiniQRCard(
 
   // 5. "Tunjukkan kepada panitia" footer line (pinned to bottom)
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(4.2);
+  doc.setFontSize(4.4);
   doc.setTextColor(130, 130, 130);
   doc.text('Tunjukkan kepada panitia', cx, by + bh - 2.2, { align: 'center' });
 }
