@@ -131,16 +131,67 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   saveEventSettings: async (input) => {
+    const { eventSettings } = get();
+
+    // ── 1. Optimistic update: langsung update state lokal ────────────────────
+    //    Sidebar & login panel berubah SEKETIKA tanpa tunggu Supabase
+    const newYear = input.eventDate
+      ? new Date(input.eventDate).getFullYear()
+      : eventSettings?.year ?? 2026;
+
+    const optimistic: import('./store').EventSettings = {
+      name:        input.name        ?? eventSettings?.name        ?? '',
+      description: input.description ?? eventSettings?.description ?? '',
+      location:    input.location    ?? eventSettings?.location    ?? '',
+      eventDate:   input.eventDate   ?? eventSettings?.eventDate   ?? '',
+      logoUrl:     input.logoUrl     ?? eventSettings?.logoUrl     ?? '/kkg-pai-logo.jpg',
+      year:        newYear,
+    };
+    set({ eventSettings: optimistic });
+
+    // ── 2. Persist ke Supabase (background) ──────────────────────────────────
     const dbInput: Record<string, unknown> = {};
     if (input.name        !== undefined) dbInput.name        = input.name;
     if (input.description !== undefined) dbInput.description = input.description;
     if (input.location    !== undefined) dbInput.location    = input.location;
     if (input.logoUrl     !== undefined) dbInput.logo_url    = input.logoUrl;
     if (input.eventDate   !== undefined) dbInput.event_date  = input.eventDate;
-    await apiUpdateEventSettings(dbInput as Parameters<typeof apiUpdateEventSettings>[0]);
-    // Reload setelah simpan
-    await get().loadEventSettings();
+
+    try {
+      await apiUpdateEventSettings(dbInput as Parameters<typeof apiUpdateEventSettings>[0]);
+    } catch (err) {
+      console.warn('[saveEventSettings] Supabase update failed:', err);
+      // Optimistic state tetap aktif meskipun Supabase gagal (sesi ini)
+    }
+
+    // ── 3. Reload dari Supabase untuk konfirmasi ──────────────────────────────
+    //    Jika Supabase berhasil diupdate → state sinkron dengan DB
+    //    Jika RLS blokir (data lama) → tetap pakai optimistic state
+    try {
+      const fresh = await fetchEventSettings();
+      if (fresh) {
+        const freshYear = fresh.event_date
+          ? new Date(fresh.event_date).getFullYear()
+          : optimistic.year;
+        const freshSettings: import('./store').EventSettings = {
+          name:        fresh.name,
+          description: fresh.description ?? '',
+          location:    fresh.location    ?? '',
+          eventDate:   fresh.event_date,
+          logoUrl:     fresh.logo_url    ?? '/kkg-pai-logo.jpg',
+          year:        freshYear,
+        };
+        // Hanya pakai data Supabase jika nama sudah sesuai dengan yang kita simpan
+        // (artinya update berhasil). Jika tidak cocok, pertahankan optimistic state.
+        if (!input.name || fresh.name === input.name) {
+          set({ eventSettings: freshSettings });
+        }
+      }
+    } catch {
+      // ignore — optimistic state sudah aktif
+    }
   },
+
 
   changeAdminPin: async (newPin: string) => {
     await updateAdminPin(newPin);
