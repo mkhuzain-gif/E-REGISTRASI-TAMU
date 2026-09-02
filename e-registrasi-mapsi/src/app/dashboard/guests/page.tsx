@@ -9,7 +9,7 @@ import Link from 'next/link';
 import {
   Plus, Search, Edit2, Trash2, QrCode, Printer,
   UserCheck, UserX, X, Save, RefreshCw,
-  FileSpreadsheet, Download, Upload, ClipboardCopy, CheckCircle2, AlertTriangle,
+  FileSpreadsheet, Download, Upload, ClipboardCopy, CheckCircle2, AlertTriangle, Users,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -575,7 +575,7 @@ export default function GuestsPage() {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-5">
       {/* Toast Alert */}
       {toastMessage && (
         <div className={`p-4 rounded-xl flex items-center gap-3 animate-bounce-in shadow-md text-sm font-medium ${
@@ -588,54 +588,85 @@ export default function GuestsPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-extrabold" style={{ color: '#064e3b', letterSpacing: '-0.02em' }}>
-            Data Tamu Undangan
-          </h2>
-          <p className="text-sm font-medium mt-0.5" style={{ color: 'rgba(5,150,105,0.7)' }}>
-            {guests.length} terdaftar · {presentCount} hadir · {guests.length - presentCount} belum
-          </p>
-        </div>
+      {/* ── Page Header ──────────────────────────────────────── */}
+      <div className="settings-animate-in dash-page-header">
+        <div className="dash-page-header-grid" />
+        <div className="dash-page-header-glow" />
+        <div style={{ position: 'relative', zIndex: 1 }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '10px',
+                background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Users size={18} style={{ color: '#34d399' }} />
+              </div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+                Data Tamu Undangan
+              </h2>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: 'rgba(167,243,208,0.7)', margin: 0, paddingLeft: '3rem' }}>
+              {guests.length} terdaftar · {presentCount} hadir · {guests.length - presentCount} belum check-in
+            </p>
+          </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
-          <button
-            id="btn-bulk-print-qr"
-            onClick={handleBulkPrintQR}
-            disabled={isBulkPrinting || (selectedIds.length === 0 && filtered.length === 0)}
-            className="neo-btn neo-btn-outline px-3.5 py-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5 disabled:opacity-50"
-            title={selectedIds.length > 0 ? `Cetak QR ${selectedIds.length} tamu terpilih` : `Cetak semua QR (${filtered.length} tamu)`}
-          >
-            <Printer size={15} /> {isBulkPrinting ? 'Memproses...' : selectedIds.length > 0 ? `Cetak QR (${selectedIds.length} Terpilih)` : `Cetak Semua QR (${filtered.length})`}
-          </button>
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              id="btn-bulk-print-qr"
+              onClick={handleBulkPrintQR}
+              disabled={isBulkPrinting || (selectedIds.length === 0 && filtered.length === 0)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                padding: '0.55rem 0.9rem', borderRadius: '10px',
+                background: 'rgba(255,255,255,0.12)', color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.25)',
+                fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              title={selectedIds.length > 0 ? `Cetak QR ${selectedIds.length} tamu terpilih` : `Cetak semua QR (${filtered.length} tamu)`}
+            >
+              <Printer size={15} /> {isBulkPrinting ? 'Memproses...' : selectedIds.length > 0 ? `Cetak QR (${selectedIds.length})` : `Cetak Semua QR (${filtered.length})`}
+            </button>
 
-          <button
-            id="btn-import-excel"
-            onClick={() => setShowBulkModal(true)}
-            className="neo-btn neo-btn-gold px-3.5 py-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5"
-            title="Import daftar tamu dari Excel atau Paste Cepat"
-          >
-            <FileSpreadsheet size={15} /> Impor Excel / Cepat
-          </button>
+            <button
+              id="btn-import-excel"
+              onClick={() => setShowBulkModal(true)}
+              className="neo-btn neo-btn-gold"
+              style={{
+                padding: '0.55rem 0.9rem', borderRadius: '10px',
+                fontWeight: 700, fontSize: '0.78rem',
+              }}
+              title="Import daftar tamu dari Excel atau Paste Cepat"
+            >
+              <FileSpreadsheet size={15} /> Impor Excel / Cepat
+            </button>
 
-          <button
-            id="btn-add-guest"
-            onClick={() => setModal('add')}
-            className="neo-btn neo-btn-primary px-3.5 py-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5"
-          >
-            <Plus size={15} /> Tambah Tamu
-          </button>
+            <button
+              id="btn-add-guest"
+              onClick={() => setModal('add')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                padding: '0.55rem 1rem', borderRadius: '10px',
+                background: '#ffffff', color: '#064e3b',
+                fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                border: 'none',
+              }}
+            >
+              <Plus size={15} style={{ color: '#059669' }} /> Tambah Tamu
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Search & filter */}
-      <div className="neo-card p-4 flex flex-col sm:flex-row gap-3">
+      {/* ── Search & filter ───────────────────────────────────── */}
+      <div className="dash-search-card flex flex-col sm:flex-row gap-3 settings-animate-in settings-animate-in-delay-1">
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2"
-            style={{ color: 'rgba(5,150,105,0.5)' }} />
-          <input id="input-search" type="search" className="neo-input pl-9"
+            style={{ color: 'rgba(5,150,105,0.45)' }} />
+          <input id="input-search" type="search" className="settings-input" style={{ paddingLeft: '2.25rem' }}
             placeholder="Cari nama, instansi, jabatan, atau ID..."
             value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
@@ -685,8 +716,17 @@ export default function GuestsPage() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="neo-card overflow-x-auto" style={{ padding: 0 }}>
+      {/* ── Table Container ───────────────────────────────────── */}
+      <div className="dash-table-card settings-animate-in settings-animate-in-delay-2">
+        <div className="dash-table-info-bar">
+          <span style={{
+            width: '6px', height: '6px', borderRadius: '50%',
+            background: '#10b981', boxShadow: '0 0 6px #10b981',
+            display: 'inline-block',
+          }} />
+          Menampilkan {filtered.length} dari {guests.length} tamu undangan
+        </div>
+        <div className="overflow-x-auto">
         <table className="neo-table">
           <thead>
             <tr>
@@ -778,6 +818,7 @@ export default function GuestsPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Modal Single Guest */}

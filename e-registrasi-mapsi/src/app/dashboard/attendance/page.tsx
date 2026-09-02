@@ -65,26 +65,55 @@ export default function AttendancePage() {
   ];
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {summaryStats.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="neo-card p-4 rounded-xl">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3"
-              style={{ background: bg }}>
-              <Icon size={17} style={{ color }} />
+    <div className="space-y-5">
+
+      {/* ── Page Header ──────────────────────────────────────── */}
+      <div className="settings-animate-in dash-page-header">
+        <div className="dash-page-header-grid" />
+        <div className="dash-page-header-glow" />
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '10px',
+                background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <ClipboardList size={18} style={{ color: '#34d399' }} />
+              </div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+                Riwayat Absensi
+              </h2>
             </div>
-            <p className="text-2xl font-extrabold" style={{ color: '#064e3b', letterSpacing: '-0.02em' }}>{value}</p>
-            <p className="text-xs font-bold mt-0.5 uppercase tracking-wide" style={{ color: 'rgba(5,150,105,0.6)' }}>{label}</p>
+            <p style={{ fontSize: '0.8rem', color: 'rgba(167,243,208,0.7)', margin: 0, paddingLeft: '3rem' }}>
+              Pantau dan kelola data kehadiran tamu undangan
+            </p>
+          </div>
+          <div className="dash-badge-year">
+            {presentCount} dari {guests.length} hadir
+          </div>
+        </div>
+      </div>
+
+      {/* ── Summary Stats ────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 settings-animate-in settings-animate-in-delay-1">
+        {summaryStats.map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className="dash-stat-card"
+            style={{ '--stat-accent': `linear-gradient(90deg, ${color}, ${color}88)` } as React.CSSProperties}>
+            <div className="dash-stat-icon" style={{ background: bg }}>
+              <Icon size={18} style={{ color }} />
+            </div>
+            <p style={{ fontSize: '1.65rem', fontWeight: 800, color: '#064e3b', letterSpacing: '-0.02em', margin: 0, lineHeight: 1.1 }}>{value}</p>
+            <p style={{ fontSize: '0.7rem', fontWeight: 700, margin: '0.35rem 0 0 0', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af' }}>{label}</p>
           </div>
         ))}
       </div>
 
-      {/* Controls */}
-      <div className="neo-card p-4 flex flex-col sm:flex-row gap-3 rounded-xl">
+      {/* ── Controls ──────────────────────────────────────────── */}
+      <div className="dash-search-card flex flex-col sm:flex-row gap-3 settings-animate-in settings-animate-in-delay-2">
         <div className="relative flex-1">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'rgba(5,150,105,0.5)' }} />
-          <input id="att-search" type="search" className="neo-input pl-9"
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'rgba(5,150,105,0.45)' }} />
+          <input id="att-search" type="search" className="settings-input" style={{ paddingLeft: '2.25rem' }}
             placeholder="Cari nama, instansi, atau ID..."
             value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
@@ -98,10 +127,14 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="neo-card overflow-hidden rounded-xl" style={{ padding: 0 }}>
-        <div className="px-4 py-3 text-xs font-semibold"
-          style={{ background: 'rgba(5,150,105,0.04)', borderBottom: '1px solid rgba(5,150,105,0.08)', color: 'rgba(5,150,105,0.7)' }}>
+      {/* ── Table ─────────────────────────────────────────────── */}
+      <div className="dash-table-card settings-animate-in settings-animate-in-delay-3">
+        <div className="dash-table-info-bar">
+          <span style={{
+            width: '6px', height: '6px', borderRadius: '50%',
+            background: '#10b981', boxShadow: '0 0 6px #10b981',
+            display: 'inline-block',
+          }} />
           Menampilkan {rows.length} dari {guests.length} tamu
         </div>
         <div className="overflow-x-auto">

@@ -41,47 +41,57 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-5 animate-fade-in max-w-5xl mx-auto">
+    <div className="space-y-5 max-w-5xl mx-auto">
 
-      {/* Welcome banner */}
-      <div className="overflow-hidden rounded-xl relative"
-        style={{
-          background: 'linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)',
-          boxShadow: '0 8px 32px rgba(5,150,105,0.25)',
-        }}>
-        {/* Isometric lines */}
-        <div className="absolute inset-0 pointer-events-none opacity-15"
-          style={{
-            backgroundImage: `linear-gradient(60deg, rgba(255,255,255,0.06) 1px, transparent 1px),
-              linear-gradient(-60deg, rgba(255,255,255,0.06) 1px, transparent 1px)`,
-            backgroundSize: '40px 40px',
-          }} />
-        <div className="absolute right-0 top-0 w-48 h-full pointer-events-none opacity-10"
-          style={{ background: 'radial-gradient(ellipse at right, rgba(52,211,153,0.6) 0%, transparent 70%)' }} />
+      {/* ── Welcome Banner ─────────────────────────────────── */}
+      <div className="settings-animate-in dash-page-header">
+        <div className="dash-page-header-grid" />
+        <div className="dash-page-header-glow" />
+        {/* Extra glow left */}
+        <div style={{
+          position: 'absolute', bottom: '-30%', left: '-5%',
+          width: '200px', height: '200px',
+          background: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
 
-        <div className="relative p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div style={{ position: 'relative', zIndex: 1 }}
+          className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex-1">
-            <p className="text-xs font-bold tracking-wider uppercase mb-1"
-              style={{ color: 'rgba(110,231,183,0.8)' }}>Selamat Datang</p>
-            <h2 className="text-white text-xl font-extrabold leading-tight"
-              style={{ letterSpacing: '-0.02em' }}>
+            <p style={{
+              fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.12em',
+              textTransform: 'uppercase', color: 'rgba(110,231,183,0.8)', marginBottom: '0.3rem',
+            }}>Selamat Datang</p>
+            <h2 style={{
+              color: '#ffffff', fontSize: '1.35rem', fontWeight: 800,
+              letterSpacing: '-0.02em', lineHeight: 1.3, margin: 0,
+            }}>
               Panitia MAPSI Kedungtuban 2026
             </h2>
-            <p className="text-sm mt-1 font-medium" style={{ color: 'rgba(167,243,208,0.8)' }}>
+            <p style={{ fontSize: '0.82rem', margin: '0.35rem 0 0 0', fontWeight: 500, color: 'rgba(167,243,208,0.75)' }}>
               Pantau kehadiran tamu undangan secara real-time
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Link href="/dashboard/scanner" id="btn-go-scanner"
-              className="neo-btn neo-btn-white px-4 py-2 text-sm"
-              style={{ borderRadius: '8px' }}>
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                padding: '0.55rem 1rem', borderRadius: '10px',
+                background: '#ffffff', color: '#064e3b',
+                fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease',
+              }}>
               <QrCode size={15} style={{ color: '#059669' }} /> Scan QR
             </Link>
             <Link href="/dashboard/guests" id="btn-go-guests"
-              className="neo-btn px-4 py-2 text-sm"
               style={{
-                borderRadius: '8px', background: 'rgba(255,255,255,0.15)',
-                border: '1px solid rgba(255,255,255,0.25)', color: '#fff',
+                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                padding: '0.55rem 1rem', borderRadius: '10px',
+                background: 'rgba(255,255,255,0.12)', color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.2)',
+                fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none',
+                transition: 'all 0.2s ease',
               }}>
               <Users size={15} /> Data Tamu
             </Link>
@@ -89,99 +99,129 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* ── Stats ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 settings-animate-in settings-animate-in-delay-1">
         {stats.map(({ id, label, value, sub, icon: Icon, iconBg, shadow }) => (
-          <div key={id} id={id} className="neo-card p-5 animate-slide-in"
-            style={{ boxShadow: `0 4px 20px ${shadow}, 0 1px 4px rgba(5,150,105,0.05)` }}>
-            <div className="stat-icon mb-3"
+          <div key={id} id={id} className="dash-stat-card"
+            style={{ '--stat-accent': iconBg } as React.CSSProperties}>
+            <div className="dash-stat-icon"
               style={{ background: iconBg, boxShadow: `0 4px 12px ${shadow}` }}>
               <Icon size={20} className="text-white" />
             </div>
-            <p className="text-3xl font-extrabold" style={{ color: '#064e3b', letterSpacing: '-0.03em' }}>{value}</p>
-            <p className="font-bold text-sm mt-1" style={{ color: '#065f46' }}>{label}</p>
-            <p className="text-xs mt-0.5 font-medium" style={{ color: 'rgba(5,150,105,0.6)' }}>{sub}</p>
+            <p style={{ fontSize: '1.85rem', fontWeight: 800, color: '#064e3b', letterSpacing: '-0.03em', margin: 0, lineHeight: 1.1 }}>{value}</p>
+            <p style={{ fontWeight: 700, fontSize: '0.82rem', margin: '0.4rem 0 0 0', color: '#065f46' }}>{label}</p>
+            <p style={{ fontSize: '0.7rem', margin: '0.2rem 0 0 0', fontWeight: 500, color: '#9ca3af' }}>{sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Progress */}
-      <div className="neo-card p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Activity size={17} style={{ color: '#059669' }} />
-            <span className="font-bold text-sm" style={{ color: '#064e3b' }}>Progress Kehadiran</span>
+      {/* ── Progress ───────────────────────────────────────── */}
+      <div className="dash-section-card settings-animate-in settings-animate-in-delay-2" style={{ padding: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '10px',
+              background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Activity size={16} style={{ color: '#047857' }} />
+            </div>
+            <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#064e3b' }}>Progress Kehadiran</span>
           </div>
           <span className="neo-badge neo-badge-green">{percentage}%</span>
         </div>
-        <div className="w-full h-4 rounded-full overflow-hidden"
-          style={{ background: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.12)' }}>
-          <div
-            className="h-full rounded-full transition-all duration-700 ease-out"
-            style={{
-              width: `${percentage}%`,
-              background: 'linear-gradient(90deg, #059669, #34d399)',
-              boxShadow: percentage > 0 ? '0 0 10px rgba(16,185,129,0.4)' : 'none',
-            }}
-          />
+        <div style={{
+          width: '100%', height: '10px', borderRadius: '99px', overflow: 'hidden',
+          background: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.1)',
+        }}>
+          <div style={{
+            height: '100%', borderRadius: '99px',
+            width: `${percentage}%`,
+            background: 'linear-gradient(90deg, #059669, #10b981, #34d399)',
+            boxShadow: percentage > 0 ? '0 0 12px rgba(16,185,129,0.4)' : 'none',
+            transition: 'width 0.7s ease-out',
+          }} />
         </div>
-        <div className="flex justify-between text-xs mt-1.5 font-medium"
-          style={{ color: 'rgba(5,150,105,0.6)' }}>
-          <span>0 tamu</span>
-          <span>Target: {guests.length} tamu</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem' }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 500, color: '#9ca3af' }}>{present.length} tamu hadir</span>
+          <span style={{ fontSize: '0.7rem', fontWeight: 500, color: '#9ca3af' }}>Target: {guests.length} tamu</span>
         </div>
       </div>
 
-      {/* Latest check-ins */}
-      <div className="neo-card overflow-hidden">
-        <div className="px-5 py-4 flex items-center justify-between"
-          style={{ borderBottom: '1px solid rgba(5,150,105,0.1)' }}>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
+      {/* ── Latest Check-ins ───────────────────────────────── */}
+      <div className="dash-section-card settings-animate-in settings-animate-in-delay-3">
+        <div style={{
+          padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(5,150,105,0.08)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '10px',
+              background: 'linear-gradient(135deg, #059669, #047857)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(5,150,105,0.25)',
+            }}>
               <Clock size={15} className="text-white" />
             </div>
-            <span className="font-bold text-sm" style={{ color: '#064e3b' }}>Check-in Terbaru</span>
+            <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#064e3b' }}>Check-in Terbaru</span>
           </div>
           <Link href="/dashboard/attendance" id="btn-view-all"
-            className="neo-btn neo-btn-outline px-3 py-1.5 text-xs"
-            style={{ borderRadius: '7px' }}>
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+              padding: '0.35rem 0.75rem', borderRadius: '8px',
+              fontSize: '0.75rem', fontWeight: 600,
+              color: '#059669', border: '1.5px solid rgba(5,150,105,0.3)',
+              textDecoration: 'none', transition: 'all 0.2s ease',
+              background: 'transparent',
+            }}>
             Lihat Semua <ArrowRight size={12} />
           </Link>
         </div>
 
         {latestCheckins.length === 0 ? (
-          <div className="p-10 text-center" style={{ color: 'rgba(5,150,105,0.5)' }}>
-            <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center"
-              style={{ background: 'rgba(5,150,105,0.07)' }}>
-              <QrCode size={26} style={{ color: 'rgba(5,150,105,0.4)' }} />
+          <div style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
+            <div style={{
+              width: '56px', height: '56px', borderRadius: '16px', margin: '0 auto 0.85rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'linear-gradient(135deg, rgba(5,150,105,0.06), rgba(5,150,105,0.1))',
+            }}>
+              <QrCode size={26} style={{ color: 'rgba(5,150,105,0.35)' }} />
             </div>
-            <p className="font-bold text-sm" style={{ color: '#065f46' }}>Belum ada check-in</p>
-            <p className="text-xs mt-1" style={{ color: 'rgba(5,150,105,0.5)' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#065f46', margin: 0 }}>Belum ada check-in</p>
+            <p style={{ fontSize: '0.75rem', margin: '0.35rem 0 0 0', color: '#9ca3af' }}>
               Scan QR Code tamu untuk mulai absensi
             </p>
           </div>
         ) : (
-          <div className="divide-y" style={{ borderColor: 'rgba(5,150,105,0.07)' }}>
+          <div>
             {latestCheckins.map(({ record, guest }, idx) => (
               <div key={record.id}
-                className="px-5 py-3.5 flex items-center gap-4 transition-colors animate-slide-in"
-                style={{ animationDelay: `${idx * 0.06}s` }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(5,150,105,0.04)')}
+                style={{
+                  padding: '0.85rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.85rem',
+                  borderBottom: idx < latestCheckins.length - 1 ? '1px solid rgba(5,150,105,0.06)' : 'none',
+                  transition: 'background 0.15s ease', cursor: 'default',
+                  animationDelay: `${idx * 0.06}s`,
+                }}
+                className="settings-animate-in"
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(5,150,105,0.03)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = '')}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm"
-                  style={{ background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff' }}>
+                <div style={{
+                  width: '32px', height: '32px', borderRadius: '10px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  fontWeight: 700, fontSize: '0.82rem',
+                  background: 'linear-gradient(135deg, #059669, #047857)', color: '#fff',
+                }}>
                   {idx + 1}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm leading-tight" style={{ color: '#064e3b' }}>{guest!.name}</p>
-                  <p className="text-xs font-medium mt-0.5" style={{ color: 'rgba(5,150,105,0.7)' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 700, fontSize: '0.85rem', lineHeight: 1.3, color: '#064e3b', margin: 0 }}>{guest!.name}</p>
+                  <p style={{ fontSize: '0.72rem', fontWeight: 500, color: '#9ca3af', margin: 0, marginTop: '0.15rem' }}>
                     {guest!.institution}
                   </p>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <span className="neo-badge neo-badge-green mb-1 block">HADIR</span>
-                  <p className="text-xs font-medium" style={{ color: 'rgba(5,150,105,0.6)' }}>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <span className="neo-badge neo-badge-green" style={{ display: 'block', marginBottom: '0.25rem' }}>HADIR</span>
+                  <p style={{ fontSize: '0.68rem', fontWeight: 500, color: '#9ca3af', margin: 0 }}>
                     {formatDateTime(record.checkinTime)}
                   </p>
                 </div>
