@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store';
 import {
   Upload, Save, Key, Calendar, MapPin,
   CheckCircle2, AlertCircle, Eye, EyeOff,
-  Image as ImageIcon, User, Shield, Link as LinkIcon, X,
+  Image as ImageIcon, User, Shield, Link as LinkIcon, X, Settings,
 } from 'lucide-react';
 
 type Tab = 'identity' | 'info' | 'security';
@@ -164,25 +164,70 @@ export default function SettingsPage() {
 
   /* ─────────────────────────────────────────────────────────── */
   return (
-    <div className="max-w-5xl mx-auto pb-12">
+    <div className="max-w-5xl mx-auto pb-16">
 
-      {/* Page header */}
-      <div className="mb-7">
-        <h2 className="text-2xl font-extrabold" style={{ color: '#064e3b' }}>Pengaturan</h2>
-        <p className="text-sm mt-1" style={{ color: '#059669' }}>
-          Ubah identitas acara setiap tahun — perubahan langsung aktif di seluruh aplikasi
-        </p>
+      {/* ── Page Header ──────────────────────────────────────── */}
+      <div className="settings-animate-in" style={{ marginBottom: '2rem' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #022c22 0%, #064e3b 40%, #047857 100%)',
+          borderRadius: '20px',
+          padding: '1.75rem 2rem',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Decorative grid overlay */}
+          <div style={{
+            position: 'absolute', inset: 0, opacity: 0.06,
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '28px 28px',
+            pointerEvents: 'none',
+          }} />
+          {/* Decorative glow */}
+          <div style={{
+            position: 'absolute', top: '-50%', right: '-10%',
+            width: '300px', height: '300px',
+            background: 'radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }} />
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '10px',
+                  background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Settings size={18} style={{ color: '#34d399' }} />
+                </div>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+                  Pengaturan
+                </h2>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'rgba(167,243,208,0.7)', margin: 0, paddingLeft: '3rem' }}>
+                Kelola identitas acara, informasi, dan keamanan aplikasi
+              </p>
+            </div>
+            <div style={{
+              background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.2)',
+              borderRadius: '10px', padding: '0.4rem 0.85rem',
+              fontSize: '0.72rem', fontWeight: 700, color: '#34d399',
+              letterSpacing: '0.05em', textTransform: 'uppercase',
+            }}>
+              Tahun {form.year || new Date().getFullYear()}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-1.5 p-1.5 rounded-2xl mb-7"
-        style={{ background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.12)' }}>
+      {/* ── Tab Bar ───────────────────────────────────────────── */}
+      <div className="settings-tab-bar settings-animate-in settings-animate-in-delay-1" style={{ marginBottom: '1.75rem' }}>
         {tabs.map(({ id, label, icon: Icon }) => (
-          <button key={id} onClick={() => { setActiveTab(id); setMsg(null); setPinMsg(null); }}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all"
-            style={activeTab === id
-              ? { background: 'white', color: '#064e3b', boxShadow: '0 2px 10px rgba(5,150,105,0.15)' }
-              : { color: '#059669' }}>
+          <button key={id}
+            onClick={() => { setActiveTab(id); setMsg(null); setPinMsg(null); }}
+            className={`settings-tab ${activeTab === id ? 'settings-tab-active' : ''}`}>
             <Icon size={15} />
             {label}
           </button>
@@ -191,22 +236,18 @@ export default function SettingsPage() {
 
       {/* ════════════ TAB: Identitas & Logo ════════════ */}
       {activeTab === 'identity' && (
-        <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={handleSave} className="settings-animate-in settings-animate-in-delay-2" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-          {/* ROW 1: Logo upload (kiri) + Preview sidebar (kanan) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-            {/* Kartu Logo Upload */}
-            <div className="neo-card flex flex-col gap-5">
-              <div className="flex items-center gap-3 pb-3"
-                style={{ borderBottom: '1px solid rgba(5,150,105,0.1)' }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg,#d1fae5,#a7f3d0)' }}>
-                  <ImageIcon size={17} style={{ color: '#047857' }} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* ── Logo Upload Card ── */}
+            <div className="settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div className="settings-card-section-title">
+                <div className="settings-icon-badge settings-icon-badge-green">
+                  <ImageIcon size={18} style={{ color: '#047857' }} />
                 </div>
                 <div>
-                  <p className="font-bold text-sm" style={{ color: '#064e3b' }}>Logo Aplikasi</p>
-                  <p className="text-xs" style={{ color: '#6ee7b7' }}>Tampil di sidebar dan halaman login</p>
+                  <p style={{ fontWeight: 700, fontSize: '0.9rem', color: '#064e3b', margin: 0 }}>Logo Aplikasi</p>
+                  <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: 0, marginTop: '0.15rem' }}>Tampil di sidebar dan halaman login</p>
                 </div>
               </div>
 
@@ -216,18 +257,18 @@ export default function SettingsPage() {
                 onDragLeave={() => setDragging(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer rounded-2xl flex flex-col items-center justify-center gap-3 py-10 transition-all select-none flex-1"
-                style={{
-                  border:     `2px dashed ${dragging ? '#059669' : 'rgba(5,150,105,0.25)'}`,
-                  background: dragging ? 'rgba(5,150,105,0.06)' : 'transparent',
-                }}>
-                <div className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: '#d1fae5' }}>
-                  <Upload size={22} style={{ color: '#059669' }} />
+                className={`settings-dropzone ${dragging ? 'dragging' : ''}`}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.85rem', flex: 1 }}>
+                <div className="settings-dropzone-icon">
+                  <Upload size={24} style={{ color: '#059669' }} />
                 </div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold" style={{ color: '#064e3b' }}>Klik atau Seret & Lepas</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#6ee7b7' }}>PNG, JPG, SVG, WebP • Maks. 2 MB</p>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#064e3b', margin: 0 }}>
+                    Klik atau Seret & Lepas
+                  </p>
+                  <p style={{ fontSize: '0.72rem', color: '#9ca3af', margin: 0, marginTop: '0.35rem' }}>
+                    PNG, JPG, SVG, WebP • Maks. 2 MB
+                  </p>
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
                   onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
@@ -235,22 +276,26 @@ export default function SettingsPage() {
 
               {/* Status logo terupload */}
               {logoFromFile ? (
-                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl"
-                  style={{ background: '#d1fae5', border: '1px solid #34d399' }}>
-                  <div className="flex items-center gap-2">
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '0.65rem 0.85rem', borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #d1fae5, #ecfdf5)',
+                  border: '1px solid rgba(52,211,153,0.4)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <CheckCircle2 size={15} style={{ color: '#059669' }} />
-                    <span className="text-xs font-semibold" style={{ color: '#065f46' }}>Gambar telah diunggah dari file</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#065f46' }}>Gambar telah diunggah dari file</span>
                   </div>
                   <button type="button" onClick={clearLogo}
-                    className="p-0.5 rounded-full hover:opacity-70 transition-opacity"
-                    style={{ color: '#059669' }} title="Hapus logo">
+                    style={{ padding: '0.2rem', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: '#059669', display: 'flex' }}
+                    title="Hapus logo">
                     <X size={14} />
                   </button>
                 </div>
               ) : (
                 <div>
-                  <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: '#065f46' }}>
-                    <LinkIcon size={10} className="inline mr-1" />Atau pakai URL Gambar
+                  <label className="settings-input-label">
+                    <LinkIcon size={11} />Atau pakai URL Gambar
                   </label>
                   <input type="url" value={form.logoUrlInput}
                     onChange={(e) => {
@@ -260,75 +305,79 @@ export default function SettingsPage() {
                       else setLogoPreview('/kkg-pai-logo.jpg');
                     }}
                     placeholder="https://contoh.com/logo.png"
-                    className="neo-input text-sm" />
+                    className="settings-input" />
                 </div>
               )}
             </div>
 
-            {/* Preview sidebar */}
-            <div className="neo-card flex flex-col gap-5">
-              <div className="flex items-center gap-3 pb-3"
-                style={{ borderBottom: '1px solid rgba(5,150,105,0.1)' }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg,#fef3c7,#fde68a)' }}>
-                  <User size={17} style={{ color: '#b45309' }} />
+            {/* ── Nama & Identitas Card ── */}
+            <div className="settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div className="settings-card-section-title">
+                <div className="settings-icon-badge settings-icon-badge-amber">
+                  <User size={18} style={{ color: '#b45309' }} />
                 </div>
                 <div>
-                  <p className="font-bold text-sm" style={{ color: '#064e3b' }}>Nama & Identitas</p>
-                  <p className="text-xs" style={{ color: '#6ee7b7' }}>Dapat diubah setiap tahun</p>
+                  <p style={{ fontWeight: 700, fontSize: '0.9rem', color: '#064e3b', margin: 0 }}>Nama & Identitas</p>
+                  <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: 0, marginTop: '0.15rem' }}>Dapat diubah setiap tahun</p>
                 </div>
               </div>
 
               {/* Nama */}
               <div>
-                <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: '#065f46' }}>
-                  Nama Aplikasi
-                </label>
+                <label className="settings-input-label">Nama Aplikasi</label>
                 <input id="settings-app-name" type="text" value={form.name}
                   onChange={(e) => setField('name', e.target.value)}
-                  placeholder="MAPSI" className="neo-input" required />
-                <p className="text-xs mt-1" style={{ color: '#6ee7b7' }}>Tampil di sidebar baris pertama</p>
+                  placeholder="MAPSI" className="settings-input" required />
+                <p style={{ fontSize: '0.7rem', color: '#9ca3af', margin: 0, marginTop: '0.35rem' }}>
+                  Tampil di sidebar baris pertama
+                </p>
               </div>
 
               {/* Edisi + Tahun */}
-              <div className="grid grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: '#065f46' }}>
-                    Edisi / Romawi
-                  </label>
+                  <label className="settings-input-label">Edisi / Romawi</label>
                   <input id="settings-edition" type="text" value={form.edition}
                     onChange={(e) => setField('edition', e.target.value)}
-                    placeholder="XXVII" className="neo-input" />
+                    placeholder="XXVII" className="settings-input" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: '#065f46' }}>
-                    Tahun
-                  </label>
+                  <label className="settings-input-label">Tahun</label>
                   <input id="settings-year" type="number" value={form.year}
                     onChange={(e) => setField('year', e.target.value)}
-                    placeholder="2026" min="2020" max="2100" className="neo-input" />
+                    placeholder="2026" min="2020" max="2100" className="settings-input" />
                 </div>
               </div>
 
               {/* Preview sidebar live */}
-              <div className="rounded-2xl overflow-hidden mt-auto"
-                style={{ border: '1px solid rgba(5,150,105,0.15)' }}>
-                <div className="px-4 py-2 text-xs font-bold uppercase tracking-widest"
-                  style={{ background: 'rgba(5,150,105,0.08)', color: '#059669', borderBottom: '1px solid rgba(5,150,105,0.1)' }}>
-                  ◉ Preview Sidebar — Live
+              <div className="settings-preview-card" style={{ marginTop: 'auto' }}>
+                <div className="settings-preview-header">
+                  <span style={{
+                    width: '6px', height: '6px', borderRadius: '50%',
+                    background: '#10b981', boxShadow: '0 0 8px #10b981',
+                    display: 'inline-block',
+                  }} />
+                  Preview Sidebar — Live
                 </div>
-                <div className="flex items-center gap-3 p-4"
-                  style={{ background: 'linear-gradient(135deg, #022c22 0%, #064e3b 100%)' }}>
-                  <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0"
-                    style={{ border: '2px solid rgba(255,255,255,0.2)' }}>
+                <div className="settings-preview-body">
+                  <div style={{
+                    width: '44px', height: '44px', borderRadius: '10px',
+                    overflow: 'hidden', flexShrink: 0,
+                    border: '2px solid rgba(255,255,255,0.15)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={logoPreview} alt="preview"
-                      className="w-full h-full object-contain bg-white p-0.5"
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#ffffff', padding: '2px' }}
                       onError={(e) => { (e.target as HTMLImageElement).src = '/icon-512x512.png'; }} />
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-extrabold text-white text-sm leading-tight truncate">{previewName}</p>
-                    <p className="text-xs font-medium" style={{ color: 'rgba(110,231,183,0.85)' }}>{previewSub}</p>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontWeight: 800, color: '#ffffff', fontSize: '0.875rem', lineHeight: 1.3, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {previewName}
+                    </p>
+                    <p style={{ fontSize: '0.72rem', fontWeight: 500, color: 'rgba(167,243,208,0.8)', margin: 0, marginTop: '0.15rem' }}>
+                      {previewSub}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -339,11 +388,9 @@ export default function SettingsPage() {
           <FeedbackBlock m={msg} />
 
           {/* Save button */}
-          <button id="btn-save-identity" type="submit" disabled={saving}
-            className="neo-btn neo-btn-primary w-full py-3.5 text-sm font-bold disabled:opacity-50"
-            style={{ borderRadius: '12px' }}>
+          <button id="btn-save-identity" type="submit" disabled={saving} className="settings-save-btn">
             {saving
-              ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Menyimpan...</>
+              ? <><span style={{ width: '16px', height: '16px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />Menyimpan...</>
               : <><Save size={16} />Simpan &amp; Terapkan ke Seluruh Aplikasi</>}
           </button>
         </form>
@@ -351,58 +398,54 @@ export default function SettingsPage() {
 
       {/* ════════════ TAB: Info Acara ════════════ */}
       {activeTab === 'info' && (
-        <form onSubmit={handleSave} className="space-y-6">
-          <div className="neo-card space-y-5">
-            <div className="flex items-center gap-3 pb-3"
-              style={{ borderBottom: '1px solid rgba(5,150,105,0.1)' }}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg,#d1fae5,#a7f3d0)' }}>
-                <Calendar size={17} style={{ color: '#047857' }} />
+        <form onSubmit={handleSave} className="settings-animate-in settings-animate-in-delay-2" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div className="settings-card-section-title">
+              <div className="settings-icon-badge settings-icon-badge-green">
+                <Calendar size={18} style={{ color: '#047857' }} />
               </div>
               <div>
-                <p className="font-bold text-sm" style={{ color: '#064e3b' }}>Info Acara</p>
-                <p className="text-xs" style={{ color: '#6ee7b7' }}>Lokasi, tanggal, dan deskripsi acara</p>
+                <p style={{ fontWeight: 700, fontSize: '0.9rem', color: '#064e3b', margin: 0 }}>Info Acara</p>
+                <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: 0, marginTop: '0.15rem' }}>Lokasi, tanggal, dan deskripsi acara</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: '#065f46' }}>
-                  <MapPin size={11} className="inline mr-1" />Lokasi / Kecamatan
+                <label className="settings-input-label">
+                  <MapPin size={11} />Lokasi / Kecamatan
                 </label>
                 <input id="settings-location" type="text" value={form.location}
                   onChange={(e) => setField('location', e.target.value)}
-                  placeholder="Kecamatan Kedungtuban" className="neo-input" />
+                  placeholder="Kecamatan Kedungtuban" className="settings-input" />
               </div>
               <div>
-                <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: '#065f46' }}>
-                  <Calendar size={11} className="inline mr-1" />Tanggal Acara
+                <label className="settings-input-label">
+                  <Calendar size={11} />Tanggal Acara
                 </label>
                 <input id="settings-event-date" type="date" value={form.eventDate}
                   onChange={(e) => setField('eventDate', e.target.value)}
-                  className="neo-input" />
+                  className="settings-input" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: '#065f46' }}>
-                Deskripsi (tampil di header bar)
-              </label>
+              <label className="settings-input-label">Deskripsi (tampil di header bar)</label>
               <input id="settings-description" type="text" value={form.description}
                 onChange={(e) => setField('description', e.target.value)}
                 placeholder="Kosongkan untuk generate otomatis"
-                className="neo-input" />
-              <p className="text-xs mt-1" style={{ color: '#6ee7b7' }}>Kosongkan untuk generate otomatis dari nama + lokasi + tahun</p>
+                className="settings-input" />
+              <p style={{ fontSize: '0.7rem', color: '#9ca3af', margin: 0, marginTop: '0.35rem' }}>
+                Kosongkan untuk generate otomatis dari nama + lokasi + tahun
+              </p>
             </div>
           </div>
 
           <FeedbackBlock m={msg} />
 
-          <button id="btn-save-info" type="submit" disabled={saving}
-            className="neo-btn neo-btn-primary w-full py-3.5 text-sm font-bold disabled:opacity-50"
-            style={{ borderRadius: '12px' }}>
+          <button id="btn-save-info" type="submit" disabled={saving} className="settings-save-btn">
             {saving
-              ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Menyimpan...</>
+              ? <><span style={{ width: '16px', height: '16px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />Menyimpan...</>
               : <><Save size={16} />Simpan Info Acara</>}
           </button>
         </form>
@@ -410,69 +453,78 @@ export default function SettingsPage() {
 
       {/* ════════════ TAB: Keamanan ════════════ */}
       {activeTab === 'security' && (
-        <form onSubmit={handleSavePin} className="space-y-6">
-          <div className="neo-card space-y-5">
-            <div className="flex items-center gap-3 pb-3"
-              style={{ borderBottom: '1px solid rgba(5,150,105,0.1)' }}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg,#fef3c7,#fde68a)' }}>
-                <Shield size={17} style={{ color: '#b45309' }} />
+        <form onSubmit={handleSavePin} className="settings-animate-in settings-animate-in-delay-2" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div className="settings-card-section-title">
+              <div className="settings-icon-badge settings-icon-badge-amber">
+                <Shield size={18} style={{ color: '#b45309' }} />
               </div>
               <div>
-                <p className="font-bold text-sm" style={{ color: '#064e3b' }}>Keamanan &amp; Password</p>
-                <p className="text-xs" style={{ color: '#6ee7b7' }}>Ganti PIN login panitia</p>
+                <p style={{ fontWeight: 700, fontSize: '0.9rem', color: '#064e3b', margin: 0 }}>Keamanan &amp; Password</p>
+                <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: 0, marginTop: '0.15rem' }}>Ganti PIN login panitia</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: '#065f46' }}>PIN Baru</label>
-                <div className="relative">
+                <label className="settings-input-label">PIN Baru</label>
+                <div style={{ position: 'relative' }}>
                   <input id="settings-new-pin"
                     type={showPin.newPin ? 'text' : 'password'}
                     value={pin.newPin}
                     onChange={(e) => setPin((p) => ({ ...p, newPin: e.target.value }))}
                     placeholder="Minimal 4 karakter"
-                    className="neo-input pr-11" maxLength={20} />
+                    className="settings-input" style={{ paddingRight: '2.75rem' }} maxLength={20} />
                   <button type="button"
                     onClick={() => setShowPin((v) => ({ ...v, newPin: !v.newPin }))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                    style={{ color: 'rgba(6,78,59,0.45)' }}>
+                    style={{
+                      position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)',
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      color: 'rgba(6,78,59,0.4)', display: 'flex', padding: '0.15rem',
+                    }}>
                     {showPin.newPin ? <EyeOff size={17} /> : <Eye size={17} />}
                   </button>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: '#065f46' }}>Konfirmasi PIN Baru</label>
-                <div className="relative">
+                <label className="settings-input-label">Konfirmasi PIN Baru</label>
+                <div style={{ position: 'relative' }}>
                   <input id="settings-confirm-pin"
                     type={showPin.confirm ? 'text' : 'password'}
                     value={pin.confirm}
                     onChange={(e) => setPin((p) => ({ ...p, confirm: e.target.value }))}
                     placeholder="Ulangi PIN baru"
-                    className="neo-input pr-11" maxLength={20} />
+                    className="settings-input" style={{ paddingRight: '2.75rem' }} maxLength={20} />
                   <button type="button"
                     onClick={() => setShowPin((v) => ({ ...v, confirm: !v.confirm }))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                    style={{ color: 'rgba(6,78,59,0.45)' }}>
+                    style={{
+                      position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)',
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      color: 'rgba(6,78,59,0.4)', display: 'flex', padding: '0.15rem',
+                    }}>
                     {showPin.confirm ? <EyeOff size={17} /> : <Eye size={17} />}
                   </button>
                 </div>
                 {pin.newPin && pin.confirm && (
-                  <p className="text-xs mt-1.5 font-medium"
-                    style={{ color: pin.newPin === pin.confirm ? '#059669' : '#ef4444' }}>
+                  <p style={{
+                    fontSize: '0.72rem', fontWeight: 600, margin: '0.4rem 0 0 0',
+                    color: pin.newPin === pin.confirm ? '#059669' : '#ef4444',
+                  }}>
                     {pin.newPin === pin.confirm ? '✓ PIN cocok' : '✗ PIN tidak cocok'}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="p-4 rounded-xl text-sm"
-              style={{ background: 'rgba(5,150,105,0.05)', border: '1px solid rgba(5,150,105,0.12)' }}>
-              <p className="font-semibold mb-1" style={{ color: '#065f46' }}>⚠️ Perhatian</p>
-              <p className="text-xs" style={{ color: '#059669' }}>
-                Setelah PIN diubah, Anda harus login ulang menggunakan PIN baru. Pastikan PIN baru mudah diingat oleh panitia.
-              </p>
+            {/* Warning notice */}
+            <div className="settings-notice settings-notice-warning">
+              <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
+              <div>
+                <p style={{ fontWeight: 700, fontSize: '0.8rem', margin: 0, marginBottom: '0.2rem' }}>Perhatian</p>
+                <p style={{ fontSize: '0.75rem', margin: 0, opacity: 0.85 }}>
+                  Setelah PIN diubah, Anda harus login ulang menggunakan PIN baru. Pastikan PIN baru mudah diingat oleh panitia.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -480,19 +532,33 @@ export default function SettingsPage() {
 
           <button id="btn-save-pin" type="submit"
             disabled={savingPin || !pin.newPin || pin.newPin !== pin.confirm}
-            className="neo-btn neo-btn-primary w-full py-3.5 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ borderRadius: '12px' }}>
+            className="settings-save-btn">
             {savingPin
-              ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Menyimpan PIN...</>
+              ? <><span style={{ width: '16px', height: '16px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />Menyimpan PIN...</>
               : <><Key size={16} />Simpan PIN Baru</>}
           </button>
         </form>
       )}
 
-      {/* Tips box */}
-      <div className="mt-8 rounded-2xl p-5"
-        style={{ background: '#ecfdf5', border: '1px solid rgba(52,211,153,0.3)' }}>
-        <p className="font-bold mb-2" style={{ color: '#065f46' }}>💡 Tips Penggunaan Tahun Berikutnya</p>
+      {/* ── Tips Section ─────────────────────────────────────── */}
+      <div className="settings-animate-in settings-animate-in-delay-3"
+        style={{
+          marginTop: '2rem', borderRadius: '18px', padding: '1.5rem',
+          background: 'linear-gradient(135deg, rgba(236,253,245,0.8) 0%, rgba(209,250,229,0.4) 100%)',
+          border: '1px solid rgba(52,211,153,0.2)',
+          backdropFilter: 'blur(8px)',
+        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1rem' }}>
+          <div style={{
+            width: '28px', height: '28px', borderRadius: '8px',
+            background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '0.85rem',
+          }}>💡</div>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', color: '#065f46', margin: 0 }}>
+            Tips Penggunaan Tahun Berikutnya
+          </p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {[
             'Ubah Nama Acara, Edisi, dan Tahun di tab Identitas & Logo',
@@ -500,9 +566,9 @@ export default function SettingsPage() {
             'Ganti PIN Admin di tab Keamanan setiap tahun untuk menjaga keamanan',
             'Semua perubahan tersimpan ke database dan aktif secara real-time',
           ].map((tip, i) => (
-            <div key={i} className="flex items-start gap-2 text-xs" style={{ color: '#047857' }}>
-              <span className="flex-shrink-0 mt-0.5">•</span>
-              <span>{tip}</span>
+            <div key={i} className="settings-tip-card">
+              <div className="settings-tip-number">{i + 1}</div>
+              <span style={{ fontSize: '0.78rem', color: '#047857', lineHeight: 1.5 }}>{tip}</span>
             </div>
           ))}
         </div>
