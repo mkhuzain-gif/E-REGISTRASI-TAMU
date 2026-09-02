@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useStore } from '@/lib/store';
+import { useStore, Guest } from '@/lib/store';
 import { parseQRPayload } from '@/lib/qr';
 import { fetchGuestByInvitationId, fetchGuestById, findGuestByQuery } from '@/lib/api';
 import { formatDateTime } from '@/lib/utils';
@@ -9,8 +9,14 @@ import Link from 'next/link';
 import {
   QrCode, Search, UserCheck, X, Camera,
   CheckCircle, AlertTriangle, Info, ScanLine, SwitchCamera,
-  Upload, Sparkles,
+  Upload, Sparkles, User, CheckCircle2, Building2, Briefcase, Clock, ShieldCheck,
 } from 'lucide-react';
+
+interface VerifiedGuestData {
+  guest: Guest;
+  time: string;
+  method: 'qr' | 'manual';
+}
 
 type ScanResult =
   | { type: 'success'; guestName: string; institution: string; time: string }
@@ -53,10 +59,149 @@ function playScanBeep(success: boolean) {
   }
 }
 
+// ─── Success Modal Pop-up (Tengah Layar) ──────────────────────────────────────
+function SuccessModal({
+  data,
+  onClose,
+}: {
+  data: VerifiedGuestData;
+  onClose: () => void;
+}) {
+  const { guest, time, method } = data;
+
+  // Extract initials for stylized avatar
+  const initials = guest.name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+      <div
+        className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-emerald-100 relative overflow-hidden animate-bounce-in flex flex-col items-center text-center"
+        style={{
+          boxShadow: '0 25px 70px -15px rgba(2, 44, 34, 0.4), 0 0 40px rgba(16, 185, 129, 0.2)',
+        }}
+      >
+        {/* Background glow decoration */}
+        <div className="absolute -top-20 -right-20 w-44 h-44 rounded-full bg-emerald-400/20 blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-44 h-44 rounded-full bg-teal-400/20 blur-2xl pointer-events-none" />
+
+        {/* Top Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+          title="Tutup Modal"
+        >
+          <X size={20} />
+        </button>
+
+        {/* Status Pill Badge: Terverifikasi */}
+        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-100 border border-emerald-300/80 text-emerald-800 text-xs font-black uppercase tracking-wider mb-4 shadow-xs">
+          <ShieldCheck size={15} className="text-emerald-600" />
+          <span>Terverifikasi</span>
+        </div>
+
+        {/* Profile Avatar / Photo Frame */}
+        <div className="relative mb-3">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 shadow-xl shadow-emerald-700/20 flex items-center justify-center">
+            <div className="w-full h-full rounded-full bg-gradient-to-b from-emerald-50 to-white flex flex-col items-center justify-center text-emerald-700 font-extrabold text-2xl sm:text-3xl border-2 border-white shadow-inner">
+              {initials ? (
+                <span>{initials}</span>
+              ) : (
+                <User size={36} className="text-emerald-600" />
+              )}
+            </div>
+          </div>
+          {/* Checkmark icon badge overlay */}
+          <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center border-2 border-white shadow-md">
+            <CheckCircle2 size={18} />
+          </div>
+        </div>
+
+        {/* Guest Full Name & ID */}
+        <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-snug">
+          {guest.name}
+        </h3>
+        <div className="mt-1.5 inline-block">
+          <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+            {guest.invitationId}
+          </span>
+        </div>
+
+        {/* 2x2 Details Grid */}
+        <div className="w-full grid grid-cols-2 gap-2.5 mt-5 text-left">
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-center">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              <Building2 size={12} className="text-emerald-600" />
+              <span>Instansi / Sekolah</span>
+            </div>
+            <p className="text-xs sm:text-sm font-bold text-slate-800 line-clamp-2 leading-tight">
+              {guest.institution || '-'}
+            </p>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-center">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              <Briefcase size={12} className="text-emerald-600" />
+              <span>Jabatan</span>
+            </div>
+            <p className="text-xs sm:text-sm font-bold text-slate-800 line-clamp-2 leading-tight">
+              {guest.position || '-'}
+            </p>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-center">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              <Clock size={12} className="text-emerald-600" />
+              <span>Waktu Masuk</span>
+            </div>
+            <p className="text-xs sm:text-sm font-bold font-mono text-slate-800 leading-tight">
+              {time || '-'}
+            </p>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-center">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              <QrCode size={12} className="text-emerald-600" />
+              <span>Metode</span>
+            </div>
+            <p className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">
+              {method === 'qr' ? 'Scan QR Code' : 'Check-in Manual'}
+            </p>
+          </div>
+        </div>
+
+        {/* Success Alert Box */}
+        <div className="w-full mt-4 p-3 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200/80 text-center">
+          <p className="text-xs font-semibold text-emerald-900 leading-relaxed">
+            🎉 <strong>Selamat datang, {guest.name}!</strong>
+            <br />
+            Absensi kehadiran Anda telah berhasil dicatat.
+          </p>
+        </div>
+
+        {/* Action Button */}
+        <button
+          onClick={onClose}
+          className="w-full mt-5 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 text-white font-bold shadow-lg shadow-emerald-700/25 hover:shadow-emerald-700/40 hover:-translate-y-0.5 active:translate-y-0 transition-all text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer border-none"
+        >
+          <CheckCircle2 size={18} />
+          <span>Tutup &amp; Lanjutkan Scan</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ScannerPage() {
   const { guests, checkIn, getGuestByInvitationId } = useStore();
   const [mode, setMode] = useState<'scanner' | 'manual'>('scanner');
   const [scanResult, setScanResult] = useState<ScanResult>(null);
+  const [verifiedGuest, setVerifiedGuest] = useState<VerifiedGuestData | null>(null);
   const [manualSearch, setManualSearch] = useState('');
   const [scannerReady, setScannerReady] = useState(false);
   const [scannerError, setScannerError] = useState('');
@@ -71,6 +216,11 @@ export default function ScannerPage() {
   const isStartingRef = useRef<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastScannedCodeRef = useRef<{ code: string; time: number }>({ code: '', time: 0 });
+  const verifiedGuestRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    verifiedGuestRef.current = !!verifiedGuest;
+  }, [verifiedGuest]);
 
   const manualFiltered = manualSearch.length >= 2
     ? guests.filter((g) =>
@@ -80,6 +230,11 @@ export default function ScannerPage() {
     : [];
 
   const handleQRDetected = useCallback(async (decodedText: string) => {
+    // If modal is currently showing, ignore background scan triggers
+    if (verifiedGuestRef.current) {
+      return;
+    }
+
     // Prevent duplicate scan processing in quick succession (< 2 seconds)
     const now = Date.now();
     if (
@@ -132,12 +287,12 @@ export default function ScannerPage() {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
           navigator.vibrate([100, 50, 100]);
         }
-        setScanResult({
-          type: 'success',
-          guestName: guest.name,
-          institution: guest.institution,
+        setVerifiedGuest({
+          guest,
           time: formatDateTime(result.record.checkinTime),
+          method: 'qr',
         });
+        setScanResult(null);
       } else {
         playScanBeep(false);
         const prev = useStore.getState().attendance.find((a) => a.guestId === guest.id && a.status === 'hadir');
@@ -304,12 +459,12 @@ export default function ScannerPage() {
     const guest = guests.find((g) => g.id === guestId)!;
     if (result.success && result.record) {
       playScanBeep(true);
-      setScanResult({
-        type: 'success',
-        guestName: guest.name,
-        institution: guest.institution,
+      setVerifiedGuest({
+        guest,
         time: formatDateTime(result.record.checkinTime),
+        method: 'manual',
       });
+      setScanResult(null);
     } else {
       playScanBeep(false);
       const prev = useStore.getState().attendance.find((a) => a.guestId === guestId && a.status === 'hadir');
@@ -318,13 +473,21 @@ export default function ScannerPage() {
         guestName: guest.name,
         prevTime: prev ? formatDateTime(prev.checkinTime) : '-',
       });
+      setTimeout(() => setScanResult(null), 5000);
     }
     setManualSearch('');
-    setTimeout(() => setScanResult(null), 5000);
   };
 
   return (
     <div className="space-y-5 animate-fade-in max-w-2xl mx-auto">
+      {/* Pop-up Success Modal di Tengah Layar */}
+      {verifiedGuest && (
+        <SuccessModal
+          data={verifiedGuest}
+          onClose={() => setVerifiedGuest(null)}
+        />
+      )}
+
       {/* Hidden container for file scan */}
       <div id="qr-file-scan-temp" style={{ display: 'none' }} />
 
