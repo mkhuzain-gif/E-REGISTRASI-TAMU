@@ -18,7 +18,7 @@ export async function generateQRDataURL(
   const dataUrl = await QRCode.toDataURL(payload, {
     errorCorrectionLevel: 'M', // Medium error correction produces larger, easier-to-scan modules
     type: 'image/png',
-    width: 400,
+    width: 800, // High-resolution render (800px) ensures crisp modules when printed
     margin: 2,
     color: {
       dark: '#000000', // Pure black provides maximum 21:1 optical contrast

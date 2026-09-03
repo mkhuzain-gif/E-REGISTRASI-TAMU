@@ -253,9 +253,9 @@ async function renderQRCardPage(
   doc.text(eventLocation, cx, 16, { align: 'center' });
 
   // ── QR Code (large, centered)
-  const qrSize = 72;
+  const qrSize = 82;
   const qrX = (pw - qrSize) / 2;
-  const qrY = headerH + 12;
+  const qrY = headerH + 9;
 
   // QR background with subtle border
   doc.setFillColor(255, 255, 255);
@@ -266,7 +266,7 @@ async function renderQRCardPage(
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
   // ── Divider
-  let y = qrY + qrSize + 14;
+  let y = qrY + qrSize + 11;
   doc.setDrawColor(5, 150, 105);
   doc.setLineWidth(0.4);
   doc.line(margin + 15, y, pw - margin - 15, y);
@@ -441,22 +441,22 @@ async function renderMiniQRCard(
   bx: number, by: number, bw: number, bh: number,
 ) {
   const cx = bx + bw / 2;
-  const pad = 2.5;
-  const maxContentWidth = bw - pad * 2 - 4; // ~93mm safe width
+  const pad = 2;
+  const maxContentWidth = bw - pad * 2 - 4; // ~94mm safe width
 
   // ── Mini green header bar
-  const headerH = 7.5;
+  const headerH = 7.0;
   doc.setFillColor(6, 78, 59);
   doc.rect(bx + pad, by + pad, bw - pad * 2, headerH, 'F');
 
   // Logo in header (tiny)
   if (logoBase64) {
     try {
-      const logoSize = 5.2;
+      const logoSize = 4.8;
       const logoY = by + pad + (headerH - logoSize) / 2;
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(bx + pad + 1.5, logoY - 0.5, logoSize + 1, logoSize + 1, 1, 1, 'F');
-      doc.addImage(logoBase64, 'PNG', bx + pad + 2, logoY, logoSize, logoSize);
+      doc.roundedRect(bx + pad + 1.2, logoY - 0.4, logoSize + 0.8, logoSize + 0.8, 0.8, 0.8, 'F');
+      doc.addImage(logoBase64, 'PNG', bx + pad + 1.6, logoY, logoSize, logoSize);
     } catch {
       // Ignore logo errors
     }
@@ -466,67 +466,67 @@ async function renderMiniQRCard(
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.2);
-  doc.text(eventTitle, cx, by + pad + 3.2, { align: 'center' });
+  doc.text(eventTitle, cx, by + pad + 3.0, { align: 'center' });
   doc.setFontSize(4.4);
   doc.setFont('helvetica', 'normal');
-  doc.text(eventLocation, cx, by + pad + 6.2, { align: 'center' });
+  doc.text(eventLocation, cx, by + pad + 5.8, { align: 'center' });
 
-  // ── QR Code (enlarged to 36mm for fast & easy scanning)
-  const qrSize = 36;
+  // ── QR Code (enlarged to 48mm, filling ~half the card for instant optical scanning)
+  const qrSize = 48;
   const qrX = cx - qrSize / 2;
-  const qrY = by + pad + headerH + 2;
+  const qrY = by + pad + headerH + 1.6;
 
   // QR background card with subtle border for high scan contrast
   doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(225, 225, 225);
+  doc.setDrawColor(220, 220, 220);
   doc.setLineWidth(0.2);
   doc.roundedRect(qrX - 1, qrY - 1, qrSize + 2, qrSize + 2, 1.5, 1.5, 'FD');
 
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
   // ── Guest info below QR (fully dynamic, no truncation!)
-  let ty = qrY + qrSize + 2.8;
+  let ty = qrY + qrSize + 2.0;
 
   // 1. Guest Name (Dynamic sizing + Multiline wrapping)
   doc.setFont('helvetica', 'bold');
-  const nameFontSize = guest.name.length > 45 ? 6.5 : guest.name.length > 32 ? 7.2 : 8;
+  const nameFontSize = guest.name.length > 45 ? 6.2 : guest.name.length > 30 ? 7.0 : 7.6;
   doc.setFontSize(nameFontSize);
   doc.setTextColor(6, 78, 59);
   const nameLines = doc.splitTextToSize(guest.name, maxContentWidth);
   doc.text(nameLines, cx, ty, { align: 'center' });
-  ty += nameLines.length * (nameFontSize * 0.38) + 0.8;
+  ty += nameLines.length * (nameFontSize * 0.36) + 0.6;
 
   // 2. Position (Jabatan)
   doc.setFont('helvetica', 'normal');
-  const posFontSize = guest.position.length > 35 ? 5.2 : 5.8;
+  const posFontSize = guest.position.length > 35 ? 4.6 : 5.2;
   doc.setFontSize(posFontSize);
   doc.setTextColor(5, 150, 105);
   const posLines = doc.splitTextToSize(guest.position, maxContentWidth);
   doc.text(posLines, cx, ty, { align: 'center' });
-  ty += posLines.length * (posFontSize * 0.38) + 0.6;
+  ty += posLines.length * (posFontSize * 0.36) + 0.5;
 
   // 3. Institution (Instansi / Sekolah)
-  const instFontSize = guest.institution.length > 40 ? 4.8 : 5.4;
+  const instFontSize = guest.institution.length > 40 ? 4.4 : 4.8;
   doc.setFontSize(instFontSize);
   doc.setTextColor(90, 90, 90);
   const instLines = doc.splitTextToSize(guest.institution, maxContentWidth);
   doc.text(instLines, cx, ty, { align: 'center' });
-  ty += instLines.length * (instFontSize * 0.38) + 1.2;
+  ty += instLines.length * (instFontSize * 0.36) + 0.8;
 
   // 4. Invitation ID badge
   const badgeText = guest.invitationId;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5.4);
-  const badgeW = doc.getTextWidth(badgeText) + 5;
+  doc.setFontSize(5.0);
+  const badgeW = doc.getTextWidth(badgeText) + 4.5;
   doc.setFillColor(209, 250, 229);
-  doc.roundedRect(cx - badgeW / 2, ty - 2.2, badgeW, 3.8, 1, 1, 'F');
+  doc.roundedRect(cx - badgeW / 2, ty - 1.8, badgeW, 3.4, 0.8, 0.8, 'F');
   doc.setTextColor(6, 95, 70);
   doc.text(badgeText, cx, ty + 0.6, { align: 'center' });
 
   // 5. "Tunjukkan kepada panitia" footer line (pinned to bottom)
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(4.4);
+  doc.setFontSize(4.2);
   doc.setTextColor(130, 130, 130);
-  doc.text('Tunjukkan kepada panitia', cx, by + bh - 2.2, { align: 'center' });
+  doc.text('Tunjukkan kepada panitia', cx, by + bh - 1.8, { align: 'center' });
 }
 
