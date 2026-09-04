@@ -12,100 +12,218 @@ const EVENT_DATE = 'Kedungtuban, 2026';
 /**
  * Export full attendance list as PDF
  */
+/**
+ * Export full attendance list as PDF
+ */
 export async function exportAttendancePDF(
   guests: Guest[],
   records: AttendanceRecord[]
 ): Promise<void> {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
-  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageWidth = doc.internal.pageSize.getWidth();   // 297mm
+  const pageHeight = doc.internal.pageSize.getHeight(); // 210mm
+  const marginX = 12;
+  const tableWidth = pageWidth - marginX * 2; // 273mm
 
-  // Header
+  // Column definitions (Total = 273mm)
+  const colWidths = [12, 74, 66, 38, 28, 25, 30];
+  const headers = ['No', 'Nama Tamu Undangan', 'Instansi / Sekolah', 'Jabatan', 'Tgl Hadir', 'Jam Hadir', 'Status'];
+  const cols = [
+    marginX,
+    marginX + colWidths[0],
+    marginX + colWidths[0] + colWidths[1],
+    marginX + colWidths[0] + colWidths[1] + colWidths[2],
+    marginX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3],
+    marginX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4],
+    marginX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4] + colWidths[5],
+  ];
+
+  // Helper: Draw table headers
+  const drawTableHeader = (startY: number) => {
+    doc.setFillColor(6, 78, 59); // Dark emerald
+    doc.roundedRect(marginX, startY, tableWidth, 8.5, 1.2, 1.2, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.8);
+
+    headers.forEach((h, i) => {
+      const isCenter = i === 0 || i >= 4;
+      const x = isCenter ? cols[i] + colWidths[i] / 2 : cols[i] + 3;
+      doc.text(h, x, startY + 5.6, { align: isCenter ? 'center' : 'left' });
+    });
+  };
+
+  // ── Header (Page 1)
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text('DAFTAR HADIR TAMU UNDANGAN', pageWidth / 2, 18, { align: 'center' });
+  doc.setFontSize(15);
+  doc.setTextColor(6, 78, 59);
+  doc.text('DAFTAR HADIR TAMU UNDANGAN', pageWidth / 2, 14, { align: 'center' });
+
   doc.setFontSize(11);
-  doc.text(EVENT_NAME, pageWidth / 2, 25, { align: 'center' });
-  doc.setFontSize(10);
+  doc.setTextColor(31, 41, 55);
+  doc.text(EVENT_NAME, pageWidth / 2, 21, { align: 'center' });
+
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text(EVENT_DATE, pageWidth / 2, 31, { align: 'center' });
+  doc.setTextColor(107, 114, 128);
+  doc.text(EVENT_DATE, pageWidth / 2, 26.5, { align: 'center' });
 
-  // Divider
-  doc.setLineWidth(0.5);
-  doc.line(10, 34, pageWidth - 10, 34);
+  // Double decorative divider lines
+  doc.setDrawColor(6, 78, 59);
+  doc.setLineWidth(0.7);
+  doc.line(marginX, 29.5, pageWidth - marginX, 29.5);
+  doc.setDrawColor(16, 185, 129);
+  doc.setLineWidth(0.3);
+  doc.line(marginX, 30.5, pageWidth - marginX, 30.5);
 
-  // Stats
+  // ── Stats Summary Bar
   const present = records.filter((r) => r.status === 'hadir').length;
   const absent = guests.length - present;
-  doc.setFontSize(9);
-  doc.text(`Total Undangan: ${guests.length}`, 10, 40);
-  doc.text(`Hadir: ${present}`, 70, 40);
-  doc.text(`Tidak Hadir: ${absent}`, 110, 40);
-  doc.text(`Dicetak: ${formatDateTime(new Date().toISOString())}`, pageWidth - 10, 40, { align: 'right' });
+  const attendanceRate = guests.length ? Math.round((present / guests.length) * 100) : 0;
 
-  // Table headers
-  const startY = 47;
-  const colWidths = [10, 45, 55, 35, 30, 35, 20];
-  const headers = ['No', 'Nama Tamu', 'Instansi / Sekolah', 'Jabatan', 'Tgl Hadir', 'Jam Hadir', 'Status'];
-  const cols = [10, 20, 65, 120, 155, 185, 220];
+  // Stats Chips
+  const drawStatChip = (x: number, y: number, w: number, label: string, val: string, bgR: number, bgG: number, bgB: number, textR: number, textG: number, textB: number) => {
+    doc.setFillColor(bgR, bgG, bgB);
+    doc.roundedRect(x, y, w, 6.5, 1.2, 1.2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.0);
+    doc.setTextColor(textR, textG, textB);
+    doc.text(`${label}: ${val}`, x + w / 2, y + 4.5, { align: 'center' });
+  };
 
-  doc.setFillColor(20, 83, 45);
-  doc.rect(10, startY - 5, pageWidth - 20, 8, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  headers.forEach((h, i) => {
-    doc.text(h, cols[i] + colWidths[i] / 2, startY, { align: 'center' });
-  });
+  drawStatChip(marginX, 34, 40, 'Total Undangan', String(guests.length), 241, 245, 249, 30, 41, 59);
+  drawStatChip(marginX + 43, 34, 30, 'Hadir', String(present), 220, 252, 231, 22, 101, 52);
+  drawStatChip(marginX + 76, 34, 35, 'Belum Hadir', String(absent), 254, 226, 226, 153, 27, 27);
+  drawStatChip(marginX + 114, 34, 35, 'Kehadiran', `${attendanceRate}%`, 236, 253, 245, 4, 120, 87);
 
-  // Table rows
-  doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'normal');
-  let y = startY + 6;
+  doc.setFontSize(8.0);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Dicetak: ${formatDateTime(new Date().toISOString())}`, pageWidth - marginX, 38.5, { align: 'right' });
 
+  // ── Table Start
+  let y = 43.5;
+  drawTableHeader(y);
+  y += 9.5;
+
+  // ── Render Guest Rows with Dynamic Row Height
   guests.forEach((guest, idx) => {
     const record = records.find((r) => r.guestId === guest.id && r.status === 'hadir');
-    if (y > 190) {
-      doc.addPage();
-      y = 20;
-    }
-    if (idx % 2 === 0) {
-      doc.setFillColor(240, 253, 244);
-      doc.rect(10, y - 4, pageWidth - 20, 7, 'F');
-    }
-    doc.text(String(idx + 1), cols[0] + colWidths[0] / 2, y, { align: 'center' });
 
-    // Dynamic sizing for name, institution, position so long text is never truncated
-    const nameFontSize = guest.name.length > 38 ? 7 : guest.name.length > 28 ? 7.8 : 8.5;
-    doc.setFontSize(nameFontSize);
-    doc.text(guest.name, cols[1], y, { maxWidth: colWidths[1] - 1 });
-
-    const instFontSize = guest.institution.length > 35 ? 7 : 8;
-    doc.setFontSize(instFontSize);
-    doc.text(guest.institution, cols[2], y, { maxWidth: colWidths[2] - 1 });
-
-    const posFontSize = guest.position.length > 22 ? 7 : 8;
-    doc.setFontSize(posFontSize);
-    doc.text(guest.position, cols[3], y, { maxWidth: colWidths[3] - 1 });
-
-    doc.setFontSize(8.5);
-    doc.text(record ? formatDate(record.checkinTime).split(',')[0] : '-', cols[4], y);
-    doc.text(record ? formatTime(record.checkinTime) : '-', cols[5], y);
+    // Split text with safe bounds
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(record ? 22 : 185, record ? 163 : 28, record ? 74 : 26);
-    doc.text(record ? 'HADIR' : 'BELUM', cols[6], y);
-    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(8.2);
+    const nameLines = doc.splitTextToSize(guest.name, colWidths[1] - 4);
+
     doc.setFont('helvetica', 'normal');
-    y += 7;
+    doc.setFontSize(8.0);
+    const instLines = doc.splitTextToSize(guest.institution, colWidths[2] - 4);
+    const posLines = doc.splitTextToSize(guest.position, colWidths[3] - 4);
+
+    const maxLines = Math.max(nameLines.length, instLines.length, posLines.length, 1);
+    const rowHeight = Math.max(7.5, maxLines * 4.0 + 3.2);
+
+    // Page Break Check
+    if (y + rowHeight > 192) {
+      doc.addPage();
+      y = 14;
+      drawTableHeader(y);
+      y += 9.5;
+    }
+
+    // Row Background (Alternating soft colors)
+    if (idx % 2 === 0) {
+      doc.setFillColor(255, 255, 255);
+    } else {
+      doc.setFillColor(248, 250, 252); // soft slate
+    }
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.rect(marginX, y, tableWidth, rowHeight, 'FD');
+
+    // Vertical alignment anchor (middle-aligned)
+    const textBaseY = y + (rowHeight / 2) + 1.2;
+
+    // 0. No
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.0);
+    doc.setTextColor(71, 85, 105);
+    doc.text(String(idx + 1), cols[0] + colWidths[0] / 2, textBaseY, { align: 'center' });
+
+    // 1. Nama Tamu (Bold & Clear)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.2);
+    doc.setTextColor(15, 23, 42); // slate-900
+    const nameStartOffset = nameLines.length > 1 ? y + 3.8 : textBaseY;
+    doc.text(nameLines, cols[1] + 3, nameStartOffset);
+
+    // 2. Instansi / Sekolah
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.0);
+    doc.setTextColor(51, 65, 85); // slate-700
+    const instStartOffset = instLines.length > 1 ? y + 3.8 : textBaseY;
+    doc.text(instLines, cols[2] + 3, instStartOffset);
+
+    // 3. Jabatan
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.0);
+    doc.setTextColor(71, 85, 105);
+    const posStartOffset = posLines.length > 1 ? y + 3.8 : textBaseY;
+    doc.text(posLines, cols[3] + 3, posStartOffset);
+
+    // 4. Tanggal Hadir
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.0);
+    doc.setTextColor(30, 41, 59);
+    doc.text(record ? formatDate(record.checkinTime).split(',')[0] : '-', cols[4] + colWidths[4] / 2, textBaseY, { align: 'center' });
+
+    // 5. Jam Hadir
+    doc.text(record ? formatTime(record.checkinTime) : '-', cols[5] + colWidths[5] / 2, textBaseY, { align: 'center' });
+
+    // 6. Status Badge Pill
+    const isHadir = Boolean(record);
+    const badgeW = 22;
+    const badgeH = 5.2;
+    const badgeX = cols[6] + (colWidths[6] - badgeW) / 2;
+    const badgeY = y + (rowHeight - badgeH) / 2;
+
+    if (isHadir) {
+      doc.setFillColor(220, 252, 231); // emerald-100
+      doc.setDrawColor(187, 247, 208);
+      doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.2, 1.2, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(22, 101, 52); // emerald-800
+      doc.text('HADIR', badgeX + badgeW / 2, badgeY + 3.6, { align: 'center' });
+    } else {
+      doc.setFillColor(254, 226, 226); // rose-100
+      doc.setDrawColor(254, 202, 202);
+      doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.2, 1.2, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(185, 28, 28); // rose-700
+      doc.text('BELUM', badgeX + badgeW / 2, badgeY + 3.6, { align: 'center' });
+    }
+
+    y += rowHeight;
   });
 
-  // Footer
+  // ── Page Footers on all pages
   const totalPages = (doc as unknown as { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p);
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Halaman ${p} dari ${totalPages} — E-Registrasi MAPSI 2026`, pageWidth / 2, 205, { align: 'center' });
+
+    // Footer divider line
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.line(marginX, pageHeight - 11, pageWidth - marginX, pageHeight - 11);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.8);
+    doc.setTextColor(148, 163, 184); // slate-400
+    doc.text('E-Registrasi MAPSI Tingkat Kecamatan Kedungtuban XXVII Tahun 2026', marginX, pageHeight - 6.5);
+    doc.text(`Halaman ${p} dari ${totalPages}`, pageWidth - marginX, pageHeight - 6.5, { align: 'right' });
   }
 
   doc.save(`Daftar-Hadir-MAPSI-2026-${Date.now()}.pdf`);
