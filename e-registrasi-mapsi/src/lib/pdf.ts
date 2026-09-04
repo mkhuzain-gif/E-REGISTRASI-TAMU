@@ -448,37 +448,32 @@ async function renderMiniQRCard(
   const innerH = bh - pad * 2;
 
   // ── Card background with rounded corners and subtle shadow effect
-  // Outer shadow (subtle offset)
-  doc.setFillColor(235, 235, 235);
-  doc.roundedRect(innerX + 0.3, innerY + 0.3, innerW, innerH, 2.5, 2.5, 'F');
-  // Main card background
+  doc.setFillColor(243, 244, 246);
+  doc.roundedRect(innerX + 0.3, innerY + 0.3, innerW, innerH, 2.0, 2.0, 'F');
+
   doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(210, 215, 220);
+  doc.setDrawColor(209, 213, 219);
   doc.setLineWidth(0.2);
-  doc.roundedRect(innerX, innerY, innerW, innerH, 2.5, 2.5, 'FD');
+  doc.roundedRect(innerX, innerY, innerW, innerH, 2.0, 2.0, 'FD');
 
   // ── Compact header bar with logo and event info
-  const headerH = 8.5;
+  const headerH = 7.5;
   const headerX = innerX + 1;
   const headerY = innerY + 1;
   const headerW = innerW - 2;
 
-  // Header background - dark emerald with slight rounded top
+  // Header background - dark emerald
   doc.setFillColor(6, 78, 59);
-  doc.roundedRect(headerX, headerY, headerW, headerH, 1.8, 1.8, 'F');
-
-  // Subtle lighter bar at bottom of header for depth
-  doc.setFillColor(5, 102, 73);
-  doc.rect(headerX, headerY + headerH - 1.8, headerW, 1.8, 'F');
+  doc.roundedRect(headerX, headerY, headerW, headerH, 1.5, 1.5, 'F');
 
   // Logo in header (tiny)
   if (logoBase64) {
     try {
-      const logoSize = 5.2;
+      const logoSize = 4.8;
       const logoY = headerY + (headerH - logoSize) / 2;
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(headerX + 1.5, logoY - 0.3, logoSize + 0.6, logoSize + 0.6, 0.8, 0.8, 'F');
-      doc.addImage(logoBase64, 'PNG', headerX + 1.8, logoY, logoSize, logoSize);
+      doc.roundedRect(headerX + 1.2, logoY - 0.2, logoSize + 0.4, logoSize + 0.4, 0.6, 0.6, 'F');
+      doc.addImage(logoBase64, 'PNG', headerX + 1.4, logoY, logoSize, logoSize);
     } catch {
       // Ignore logo errors
     }
@@ -487,30 +482,30 @@ async function renderMiniQRCard(
   // Header text
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5.8);
-  doc.text(eventTitle, cx, headerY + 3.4, { align: 'center' });
-  doc.setFontSize(4.0);
+  doc.setFontSize(5.6);
+  doc.text(eventTitle, cx, headerY + 3.0, { align: 'center' });
+  doc.setFontSize(3.8);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(180, 230, 210);
-  doc.text(eventLocation, cx, headerY + 6.2, { align: 'center' });
+  doc.setTextColor(187, 247, 208);
+  doc.text(eventLocation, cx, headerY + 5.8, { align: 'center' });
 
-  // ── QR Code - large and prominent (55mm for easy scanning)
-  const qrSize = 55;
+  // ── QR Code - large and prominent (50mm for easy scanning & clean layout)
+  const qrSize = 50;
   const qrX = cx - qrSize / 2;
-  const qrY = headerY + headerH + 2;
+  const qrY = headerY + headerH + 1.8;
 
-  // Clean white QR zone with thin elegant border
-  const qrPad = 1.5;
+  // Clean white QR zone with thin elegant emerald border
+  const qrPad = 1.0;
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(6, 78, 59);
-  doc.setLineWidth(0.35);
-  doc.roundedRect(qrX - qrPad, qrY - qrPad, qrSize + qrPad * 2, qrSize + qrPad * 2, 1.2, 1.2, 'FD');
+  doc.setLineWidth(0.3);
+  doc.roundedRect(qrX - qrPad, qrY - qrPad, qrSize + qrPad * 2, qrSize + qrPad * 2, 1.0, 1.0, 'FD');
 
-  // Small corner accents on QR frame for premium look
-  const cornerLen = 3.5;
-  const cornerOff = 0.6;
+  // Corner accents on QR frame for a modern & professional viewfinder look
+  const cornerLen = 3.0;
+  const cornerOff = 0.5;
   doc.setDrawColor(5, 150, 105);
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.5);
   // Top-left
   doc.line(qrX - qrPad - cornerOff, qrY - qrPad - cornerOff, qrX - qrPad - cornerOff + cornerLen, qrY - qrPad - cornerOff);
   doc.line(qrX - qrPad - cornerOff, qrY - qrPad - cornerOff, qrX - qrPad - cornerOff, qrY - qrPad - cornerOff + cornerLen);
@@ -527,50 +522,25 @@ async function renderMiniQRCard(
   // Render QR image
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
-  // ── Guest info section below QR
+  // ── Simplified Guest Info below QR: Only Guest Name + School/Institution
   const maxContentWidth = innerW - 6;
-  let ty = qrY + qrSize + qrPad + 3.5;
+  let ty = qrY + qrSize + qrPad + 3.6;
 
-  // Guest Name - bold, prominent
+  // 1. Guest Name (Bold, Clear, Readable)
   doc.setFont('helvetica', 'bold');
-  const nameFontSize = guest.name.length > 45 ? 5.8 : guest.name.length > 30 ? 6.5 : 7.2;
+  const nameFontSize = guest.name.length > 40 ? 6.2 : guest.name.length > 26 ? 6.8 : 7.4;
   doc.setFontSize(nameFontSize);
-  doc.setTextColor(17, 24, 39);
+  doc.setTextColor(17, 24, 39); // deep dark text
   const nameLines = doc.splitTextToSize(guest.name, maxContentWidth);
   doc.text(nameLines, cx, ty, { align: 'center' });
-  ty += nameLines.length * (nameFontSize * 0.38) + 0.8;
+  ty += nameLines.length * (nameFontSize * 0.38) + 1.2;
 
-  // Position (Jabatan) - muted green
-  doc.setFont('helvetica', 'normal');
-  const posFontSize = guest.position.length > 35 ? 4.2 : 4.8;
-  doc.setFontSize(posFontSize);
-  doc.setTextColor(5, 150, 105);
-  const posLines = doc.splitTextToSize(guest.position, maxContentWidth);
-  doc.text(posLines, cx, ty, { align: 'center' });
-  ty += posLines.length * (posFontSize * 0.36) + 0.3;
-
-  // Institution
-  const instFontSize = guest.institution.length > 40 ? 4.0 : 4.5;
+  // 2. School / Institution (Bold Emerald Green, Clean)
+  doc.setFont('helvetica', 'bold');
+  const instFontSize = guest.institution.length > 35 ? 4.8 : 5.4;
   doc.setFontSize(instFontSize);
-  doc.setTextColor(107, 114, 128);
+  doc.setTextColor(5, 150, 105); // emerald green
   const instLines = doc.splitTextToSize(guest.institution, maxContentWidth);
   doc.text(instLines, cx, ty, { align: 'center' });
-
-  // ── Bottom bar with invitation ID
-  const barH = 4.5;
-  const barY = innerY + innerH - barH - 1;
-  doc.setFillColor(236, 253, 245);
-  doc.roundedRect(innerX + 1, barY, innerW - 2, barH, 1, 1, 'F');
-
-  // Thin green accent line above the bar
-  doc.setDrawColor(5, 150, 105);
-  doc.setLineWidth(0.25);
-  doc.line(innerX + 8, barY, innerX + innerW - 8, barY);
-
-  // Invitation ID centered in the bar
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4.5);
-  doc.setTextColor(6, 95, 70);
-  doc.text(guest.invitationId, cx, barY + 3, { align: 'center' });
 }
 
