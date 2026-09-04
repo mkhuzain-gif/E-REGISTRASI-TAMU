@@ -455,51 +455,56 @@ async function renderMiniQRCard(
   doc.setLineWidth(0.2);
   doc.roundedRect(innerX, innerY, innerW, innerH, 2.0, 2.0, 'FD');
 
-  // ── Top Header Bar with Logo and Event Title
-  const headerH = 7.5;
+  // ── Top Header Bar with Logo and Event Title (Enhanced & Crisp for Print)
+  const headerH = 11.0;
   const headerX = innerX + 1;
   const headerY = innerY + 1;
   const headerW = innerW - 2;
   const headerCx = headerX + headerW / 2;
 
-  // Dark emerald header
+  // Dark emerald header background with rounded top
   doc.setFillColor(6, 78, 59);
-  doc.roundedRect(headerX, headerY, headerW, headerH, 1.5, 1.5, 'F');
+  doc.roundedRect(headerX, headerY, headerW, headerH, 1.8, 1.8, 'F');
 
-  // Logo in header (tiny)
+  // Vibrant emerald bottom accent stripe for a polished badge look
+  doc.setFillColor(16, 185, 129);
+  doc.rect(headerX, headerY + headerH - 1.2, headerW, 1.2, 'F');
+
+  // Logo in header (enlarged for crisp printing)
   if (logoBase64) {
     try {
-      const logoSize = 4.8;
-      const logoY = headerY + (headerH - logoSize) / 2;
+      const logoSize = 8.0;
+      const logoY = headerY + (headerH - 1.2 - logoSize) / 2;
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(headerX + 1.2, logoY - 0.2, logoSize + 0.4, logoSize + 0.4, 0.6, 0.6, 'F');
-      doc.addImage(logoBase64, 'PNG', headerX + 1.4, logoY, logoSize, logoSize);
+      doc.roundedRect(headerX + 1.8, logoY - 0.4, logoSize + 0.8, logoSize + 0.8, 1.0, 1.0, 'F');
+      doc.addImage(logoBase64, 'PNG', headerX + 2.2, logoY, logoSize, logoSize);
     } catch {
       // Ignore logo errors
     }
   }
 
-  // Header text
+  // Header text - Bold, larger, high-contrast for crystal-clear printing
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5.6);
-  doc.text(eventTitle, headerCx, headerY + 3.0, { align: 'center' });
-  doc.setFontSize(3.8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(187, 247, 208);
-  doc.text(eventLocation, headerCx, headerY + 5.8, { align: 'center' });
+  const titleFontSize = eventTitle.length > 35 ? 6.8 : 7.6;
+  doc.setFontSize(titleFontSize);
+  doc.text(eventTitle, headerCx + (logoBase64 ? 2.5 : 0), headerY + 4.6, { align: 'center' });
+
+  // Subtitle / Location
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(5.2);
+  doc.setTextColor(209, 250, 229); // #d1fae5 mint white
+  doc.text(eventLocation, headerCx + (logoBase64 ? 2.5 : 0), headerY + 8.2, { align: 'center' });
 
   // ── Content Area (Side-by-Side: QR on Left, Text on Right)
-  const contentY = headerY + headerH + 1.5;
-  const contentH = innerH - (contentY - innerY) - 1.5;
+  const contentY = headerY + headerH + 1.8;
+  const contentH = innerH - (contentY - innerY) - 1.2;
 
-  // 1. LEFT SIDE: Large QR Code (54mm)
-  const qrSize = 54;
-  const qrX = innerX + 2.5;
-  const qrY = contentY + (contentH - qrSize) / 2;
-
-  // Clean white QR zone with thin emerald border
+  // 1. LEFT SIDE: Large QR Code (53mm)
+  const qrSize = 53;
   const qrPad = 0.8;
+  const qrX = innerX + 2.5;
+  const qrY = contentY + (contentH - (qrSize + qrPad * 2)) / 2 + qrPad;
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(6, 78, 59);
   doc.setLineWidth(0.3);
