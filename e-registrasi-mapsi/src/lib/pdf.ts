@@ -529,61 +529,104 @@ async function renderMiniQRCard(
   // 2. RIGHT SIDE: Guest Information (Side Column, Never Overlapping QR)
   const infoX = qrX + qrSize + 3.0;
   const infoW = (innerX + innerW) - infoX - 2.0;
+  const infoH = qrSize + qrPad * 2;
+  const infoY = qrY - qrPad;
   const infoCx = infoX + infoW / 2;
 
-  // Background panel for info section
-  doc.setFillColor(249, 250, 251);
-  doc.setDrawColor(229, 231, 235);
-  doc.setLineWidth(0.2);
-  doc.roundedRect(infoX, qrY - qrPad, infoW, qrSize + qrPad * 2, 1.2, 1.2, 'FD');
+  // Background panel for info section with elegant border and subtle shadow
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(220, 226, 232);
+  doc.setLineWidth(0.25);
+  doc.roundedRect(infoX, infoY, infoW, infoH, 1.6, 1.6, 'FD');
 
-  // Text setup
+  // Top emerald accent strip on the info panel
+  doc.setFillColor(6, 78, 59);
+  doc.roundedRect(infoX, infoY, infoW, 1.2, 0.6, 0.6, 'F');
+
+  // Text setup with dynamic sizing
+  const nameFontSize = guest.name.length > 35 ? 6.2 : guest.name.length > 22 ? 6.8 : 7.5;
   doc.setFont('helvetica', 'bold');
-  const nameFontSize = guest.name.length > 35 ? 6.2 : guest.name.length > 22 ? 7.0 : 7.8;
   doc.setFontSize(nameFontSize);
   const nameLines = doc.splitTextToSize(guest.name, infoW - 3);
 
-  const instFontSize = guest.institution.length > 30 ? 5.2 : 5.8;
+  const posFontSize = guest.position.length > 25 ? 4.2 : 4.8;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(posFontSize);
+  const posLines = doc.splitTextToSize(guest.position, infoW - 3);
+
+  const instFontSize = guest.institution.length > 30 ? 4.8 : 5.4;
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(instFontSize);
   const instLines = doc.splitTextToSize(guest.institution, infoW - 3);
 
-  const nameLineH = nameFontSize * 0.42;
-  const instLineH = instFontSize * 0.42;
+  // Line heights and total content calculation
+  const nameLineH = nameFontSize * 0.40;
+  const posLineH = posFontSize * 0.38;
+  const instLineH = instFontSize * 0.40;
+
   const nameBlockH = nameLines.length * nameLineH;
+  const posBlockH = posLines.length * posLineH;
   const instBlockH = instLines.length * instLineH;
-  const totalTextH = nameBlockH + 3.5 + instBlockH + 5.0;
+  const badgeH = 3.2;
 
-  // Vertically centered inside the info panel
-  let ty = qrY + (qrSize - totalTextH) / 2 + nameFontSize * 0.35;
+  // Footer bar for "Tunjukkan kepada panitia"
+  const footerH = 3.6;
+  const footerY = infoY + infoH - footerH - 1.4;
 
-  // Render Name
+  // Calculate content block height
+  const totalContentH = nameBlockH + 1.2 + posBlockH + 1.0 + instBlockH + 2.0 + 0.3 + 2.0 + badgeH;
+  const availableContentH = footerY - (infoY + 2.5);
+
+  // Vertically center content between top accent and footer bar
+  let ty = (infoY + 2.5) + Math.max(0, (availableContentH - totalContentH) / 2) + nameFontSize * 0.35;
+
+  // 1. Render Nama Tamu
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(nameFontSize);
-  doc.setTextColor(17, 24, 39);
+  doc.setTextColor(15, 23, 42); // slate-900 deep dark
   doc.text(nameLines, infoCx, ty, { align: 'center' });
-  ty += nameBlockH + 0.8;
+  ty += nameBlockH + 1.2;
 
-  // Divider line
-  doc.setDrawColor(16, 185, 129);
-  doc.setLineWidth(0.35);
-  doc.line(infoCx - 9, ty, infoCx + 9, ty);
-  ty += 2.8;
+  // 2. Render Jabatan (Kepala Sekolah)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(posFontSize);
+  doc.setTextColor(5, 150, 105); // emerald-600
+  doc.text(posLines, infoCx, ty, { align: 'center' });
+  ty += posBlockH + 1.0;
 
-  // Render Institution / School
+  // 3. Render Instansi / Sekolah (SDN PULO)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(instFontSize);
-  doc.setTextColor(5, 150, 105);
+  doc.setTextColor(51, 65, 85); // slate-700
   doc.text(instLines, infoCx, ty, { align: 'center' });
   ty += instBlockH + 2.0;
 
-  // Invitation ID pill badge
+  // Decorative Divider Line
+  doc.setDrawColor(209, 213, 219);
+  doc.setLineWidth(0.25);
+  doc.line(infoCx - 10, ty, infoCx + 10, ty);
+  ty += 2.0;
+
+  // 4. Render Invitation ID Badge (MAPSI-XXXXX)
   const badgeText = guest.invitationId;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4.0);
-  const badgeW = doc.getTextWidth(badgeText) + 3.5;
-  doc.setFillColor(236, 253, 245);
-  doc.roundedRect(infoCx - badgeW / 2, ty - 1.4, badgeW, 2.8, 0.6, 0.6, 'F');
-  doc.setTextColor(6, 95, 70);
-  doc.text(badgeText, infoCx, ty + 0.6, { align: 'center' });
+  doc.setFontSize(4.2);
+  const badgeW = doc.getTextWidth(badgeText) + 4.0;
+  doc.setFillColor(236, 253, 245); // emerald-50
+  doc.setDrawColor(167, 243, 208); // emerald-200
+  doc.setLineWidth(0.2);
+  doc.roundedRect(infoCx - badgeW / 2, ty, badgeW, badgeH, 0.8, 0.8, 'FD');
+  doc.setTextColor(4, 120, 87); // emerald-700
+  doc.text(badgeText, infoCx, ty + 2.2, { align: 'center' });
+
+  // 5. Render Footer Bar ("Tunjukkan kepada panitia")
+  doc.setFillColor(241, 245, 249); // slate-100
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.15);
+  doc.roundedRect(infoX + 1.2, footerY, infoW - 2.4, footerH, 0.8, 0.8, 'FD');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(3.6);
+  doc.setTextColor(100, 116, 139); // slate-500
+  doc.text('Tunjukkan kepada panitia', infoCx, footerY + 2.4, { align: 'center' });
 }
 
