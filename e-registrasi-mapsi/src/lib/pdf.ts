@@ -440,7 +440,6 @@ async function renderMiniQRCard(
   eventLocation: string,
   bx: number, by: number, bw: number, bh: number,
 ) {
-  const cx = bx + bw / 2;
   const pad = 1.5;
   const innerX = bx + pad;
   const innerY = by + pad;
@@ -456,13 +455,14 @@ async function renderMiniQRCard(
   doc.setLineWidth(0.2);
   doc.roundedRect(innerX, innerY, innerW, innerH, 2.0, 2.0, 'FD');
 
-  // ── Compact header bar with logo and event info
+  // ── Top Header Bar with Logo and Event Title
   const headerH = 7.5;
   const headerX = innerX + 1;
   const headerY = innerY + 1;
   const headerW = innerW - 2;
+  const headerCx = headerX + headerW / 2;
 
-  // Header background - dark emerald
+  // Dark emerald header
   doc.setFillColor(6, 78, 59);
   doc.roundedRect(headerX, headerY, headerW, headerH, 1.5, 1.5, 'F');
 
@@ -483,25 +483,29 @@ async function renderMiniQRCard(
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(5.6);
-  doc.text(eventTitle, cx, headerY + 3.0, { align: 'center' });
+  doc.text(eventTitle, headerCx, headerY + 3.0, { align: 'center' });
   doc.setFontSize(3.8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(187, 247, 208);
-  doc.text(eventLocation, cx, headerY + 5.8, { align: 'center' });
+  doc.text(eventLocation, headerCx, headerY + 5.8, { align: 'center' });
 
-  // ── QR Code - large and prominent (50mm for easy scanning & clean layout)
-  const qrSize = 50;
-  const qrX = cx - qrSize / 2;
-  const qrY = headerY + headerH + 1.8;
+  // ── Content Area (Side-by-Side: QR on Left, Text on Right)
+  const contentY = headerY + headerH + 1.5;
+  const contentH = innerH - (contentY - innerY) - 1.5;
 
-  // Clean white QR zone with thin elegant emerald border
-  const qrPad = 1.0;
+  // 1. LEFT SIDE: Large QR Code (54mm)
+  const qrSize = 54;
+  const qrX = innerX + 2.5;
+  const qrY = contentY + (contentH - qrSize) / 2;
+
+  // Clean white QR zone with thin emerald border
+  const qrPad = 0.8;
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(6, 78, 59);
   doc.setLineWidth(0.3);
   doc.roundedRect(qrX - qrPad, qrY - qrPad, qrSize + qrPad * 2, qrSize + qrPad * 2, 1.0, 1.0, 'FD');
 
-  // Corner accents on QR frame for a modern & professional viewfinder look
+  // Viewfinder corner accents on QR frame
   const cornerLen = 3.0;
   const cornerOff = 0.5;
   doc.setDrawColor(5, 150, 105);
@@ -522,25 +526,64 @@ async function renderMiniQRCard(
   // Render QR image
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
-  // ── Simplified Guest Info below QR: Only Guest Name + School/Institution
-  const maxContentWidth = innerW - 6;
-  let ty = qrY + qrSize + qrPad + 3.6;
+  // 2. RIGHT SIDE: Guest Information (Side Column, Never Overlapping QR)
+  const infoX = qrX + qrSize + 3.0;
+  const infoW = (innerX + innerW) - infoX - 2.0;
+  const infoCx = infoX + infoW / 2;
 
-  // 1. Guest Name (Bold, Clear, Readable)
+  // Background panel for info section
+  doc.setFillColor(249, 250, 251);
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(infoX, qrY - qrPad, infoW, qrSize + qrPad * 2, 1.2, 1.2, 'FD');
+
+  // Text setup
   doc.setFont('helvetica', 'bold');
-  const nameFontSize = guest.name.length > 40 ? 6.2 : guest.name.length > 26 ? 6.8 : 7.4;
+  const nameFontSize = guest.name.length > 35 ? 6.2 : guest.name.length > 22 ? 7.0 : 7.8;
   doc.setFontSize(nameFontSize);
-  doc.setTextColor(17, 24, 39); // deep dark text
-  const nameLines = doc.splitTextToSize(guest.name, maxContentWidth);
-  doc.text(nameLines, cx, ty, { align: 'center' });
-  ty += nameLines.length * (nameFontSize * 0.38) + 1.2;
+  const nameLines = doc.splitTextToSize(guest.name, infoW - 3);
 
-  // 2. School / Institution (Bold Emerald Green, Clean)
-  doc.setFont('helvetica', 'bold');
-  const instFontSize = guest.institution.length > 35 ? 4.8 : 5.4;
+  const instFontSize = guest.institution.length > 30 ? 5.2 : 5.8;
   doc.setFontSize(instFontSize);
-  doc.setTextColor(5, 150, 105); // emerald green
-  const instLines = doc.splitTextToSize(guest.institution, maxContentWidth);
-  doc.text(instLines, cx, ty, { align: 'center' });
+  const instLines = doc.splitTextToSize(guest.institution, infoW - 3);
+
+  const nameLineH = nameFontSize * 0.42;
+  const instLineH = instFontSize * 0.42;
+  const nameBlockH = nameLines.length * nameLineH;
+  const instBlockH = instLines.length * instLineH;
+  const totalTextH = nameBlockH + 3.5 + instBlockH + 5.0;
+
+  // Vertically centered inside the info panel
+  let ty = qrY + (qrSize - totalTextH) / 2 + nameFontSize * 0.35;
+
+  // Render Name
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(nameFontSize);
+  doc.setTextColor(17, 24, 39);
+  doc.text(nameLines, infoCx, ty, { align: 'center' });
+  ty += nameBlockH + 0.8;
+
+  // Divider line
+  doc.setDrawColor(16, 185, 129);
+  doc.setLineWidth(0.35);
+  doc.line(infoCx - 9, ty, infoCx + 9, ty);
+  ty += 2.8;
+
+  // Render Institution / School
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(instFontSize);
+  doc.setTextColor(5, 150, 105);
+  doc.text(instLines, infoCx, ty, { align: 'center' });
+  ty += instBlockH + 2.0;
+
+  // Invitation ID pill badge
+  const badgeText = guest.invitationId;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(4.0);
+  const badgeW = doc.getTextWidth(badgeText) + 3.5;
+  doc.setFillColor(236, 253, 245);
+  doc.roundedRect(infoCx - badgeW / 2, ty - 1.4, badgeW, 2.8, 0.6, 0.6, 'F');
+  doc.setTextColor(6, 95, 70);
+  doc.text(badgeText, infoCx, ty + 0.6, { align: 'center' });
 }
 
